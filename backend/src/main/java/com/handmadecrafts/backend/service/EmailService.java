@@ -1,0 +1,212 @@
+package com.handmadecrafts.backend.service;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+
+@Service
+@Slf4j
+public class EmailService {
+
+    private final JavaMailSender mailSender;
+    private final String fromAddress;
+
+    public EmailService(
+            JavaMailSender mailSender,
+            @Value("${app.mail.from:${spring.mail.username:}}") String fromAddress) {
+
+        this.mailSender = mailSender;
+        this.fromAddress = fromAddress;
+    }
+
+    public void sendOtpEmail(String toEmail, String otp, String subject) {
+
+        log.info("Preparing SMTP OTP email: to={}, from={}",
+                maskEmail(toEmail),
+                maskEmail(fromAddress));
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true, "UTF-8");
+
+            if (fromAddress != null && !fromAddress.isBlank()) {
+                helper.setFrom(fromAddress);
+            }
+
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+
+            String htmlBody = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+
+                    <body style="
+                        margin:0;
+                        padding:0;
+                        background-color:#FAF7F2;
+                        font-family:Arial, Helvetica, sans-serif;
+                    ">
+
+                        <div style="
+                            max-width:600px;
+                            margin:40px auto;
+                            background:#ffffff;
+                            border-radius:20px;
+                            overflow:hidden;
+                            box-shadow:0 8px 30px rgba(0,0,0,0.08);
+                        ">
+
+                            <!-- Header -->
+                            <div style="
+                                background:#D67A57;
+                                padding:28px;
+                                text-align:center;
+                            ">
+                                <h1 style="
+                                    margin:0;
+                                    color:#ffffff;
+                                    font-size:28px;
+                                ">
+                                    Artisan<span style="color:#FFF3EE;">Crafts</span>
+                                </h1>
+
+                                <p style="
+                                    margin:8px 0 0;
+                                    color:#FFF3EE;
+                                    font-size:14px;
+                                ">
+                                    Handmade with love
+                                </p>
+                            </div>
+
+                            <!-- Content -->
+                            <div style="
+                                padding:40px 30px;
+                                text-align:center;
+                            ">
+
+                                <h2 style="
+                                    margin:0 0 12px;
+                                    color:#2F2F2F;
+                                    font-size:25px;
+                                ">
+                                    Verify Your Email
+                                </h2>
+
+                                <p style="
+                                    color:#6B6B6B;
+                                    font-size:15px;
+                                    line-height:1.6;
+                                    margin-bottom:25px;
+                                ">
+                                    Use the verification code below to continue
+                                    with your ArtisanCrafts account.
+                                </p>
+
+                                <!-- OTP Box -->
+                                <div style="
+                                    display:inline-block;
+                                    background:#FAF7F2;
+                                    border:2px solid #D67A57;
+                                    border-radius:14px;
+                                    padding:18px 35px;
+                                    margin:10px 0 25px;
+                                ">
+                                    <span style="
+                                        color:#D67A57;
+                                        font-size:32px;
+                                        font-weight:bold;
+                                        letter-spacing:8px;
+                                    ">
+                                        %s
+                                    </span>
+                                </div>
+
+                                <p style="
+                                    color:#6B6B6B;
+                                    font-size:14px;
+                                    line-height:1.6;
+                                ">
+                                    This OTP will expire in
+                                    <strong>5 minutes</strong>.
+                                </p>
+
+                                <p style="
+                                    color:#999999;
+                                    font-size:13px;
+                                    margin-top:25px;
+                                ">
+                                    If you did not request this verification code,
+                                    you can safely ignore this email.
+                                </p>
+
+                            </div>
+
+                            <!-- Footer -->
+                            <div style="
+                                background:#2F2F2F;
+                                padding:20px;
+                                text-align:center;
+                            ">
+                                <p style="
+                                    margin:0;
+                                    color:#dddddd;
+                                    font-size:12px;
+                                ">
+                                    © 2026 ArtisanCrafts. All rights reserved.
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </body>
+                    </html>
+                    """.formatted(otp);
+
+            helper.setText(htmlBody, true);
+
+            mailSender.send(message);
+
+            log.info("OTP email successfully sent to {}",
+                    maskEmail(toEmail));
+
+        } catch (MessagingException e) {
+
+            log.error("SMTP OTP send failed. to={}, from={}, error={}",
+                    maskEmail(toEmail),
+                    maskEmail(fromAddress),
+                    e.getMessage(),
+                    e);
+
+            throw new IllegalStateException(
+                    "Failed to send OTP email", e);
+        }
+    }
+
+    private String maskEmail(String value) {
+
+        if (value == null || value.isBlank()) {
+            return "<not-set>";
+        }
+
+        int at = value.indexOf('@');
+
+        if (at <= 1) {
+            return "***";
+        }
+
+        return value.substring(0, 2)
+                + "***"
+                + value.substring(at);
+    }
+}

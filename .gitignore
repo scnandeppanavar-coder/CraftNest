@@ -1,0 +1,25 @@
+# Backend
+backend/target/
+backend/.env
+backend/src/main/resources/application.properties
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# Secrets
+.env
+*.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ZIP backups
+*.zip
