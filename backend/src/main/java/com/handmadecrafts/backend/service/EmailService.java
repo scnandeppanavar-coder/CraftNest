@@ -1,35 +1,46 @@
 package com.handmadecrafts.backend.service;
 
-import com.resend.Resend;
-import com.resend.services.emails.model.CreateEmailOptions;
-import com.resend.services.emails.model.CreateEmailResponse;
-import com.resend.core.exception.ResendException;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 public class EmailService {
 
-    private final Resend resend;
+    private final JavaMailSender mailSender;
     private final String fromAddress;
 
     public EmailService(
-            @Value("${RESEND_API_KEY}") String apiKey,
-            @Value("${app.mail.from:onboarding@resend.dev}") String fromAddress) {
+            JavaMailSender mailSender,
+            @Value("${app.mail.from:${spring.mail.username:}}") String fromAddress) {
 
-        this.resend = new Resend(apiKey);
+        this.mailSender = mailSender;
         this.fromAddress = fromAddress;
     }
 
     public void sendOtpEmail(String toEmail, String otp, String subject) {
 
-        log.info("Preparing Resend OTP email: to={}, from={}",
+        log.info("Preparing SMTP OTP email: to={}, from={}",
                 maskEmail(toEmail),
                 maskEmail(fromAddress));
 
         try {
+            MimeMessage message = mailSender.createMimeMessage();
+
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true, "UTF-8");
+
+            if (fromAddress != null && !fromAddress.isBlank()) {
+                helper.setFrom(fromAddress);
+            }
+
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
 
             String htmlBody = """
                     <!DOCTYPE html>
@@ -126,7 +137,7 @@ public class EmailService {
                                     color:#6B6B6B;
                                     font-size:14px;
                                     line-height:1.6;
-                                ">
+                                 ">
                                     This OTP will expire in
                                     <strong>5 minutes</strong>.
                                 </p>
@@ -163,30 +174,20 @@ public class EmailService {
                     </html>
                     """.formatted(otp);
 
-            CreateEmailOptions params = CreateEmailOptions.builder()
-                    .from(fromAddress)
-                    .to(toEmail)
-                    .subject(subject)
-                    .html(htmlBody)
-                    .build();
+            helper.setText(htmlBody, true);
 
-            CreateEmailResponse response = resend.emails().send(params);
+            mailSender.send(message);
 
-            log.info(
-                    "OTP email successfully sent to {}, emailId={}",
-                    maskEmail(toEmail),
-                    response.getId()
-            );
+            log.info("OTP email successfully sent to {}",
+                    maskEmail(toEmail));
 
-        } catch (ResendException e) {
+        } catch (MessagingException e) {
 
-            log.error(
-                    "Resend OTP send failed. to={}, from={}, error={}",
+            log.error("SMTP OTP send failed. to={}, from={}, error={}",
                     maskEmail(toEmail),
                     maskEmail(fromAddress),
                     e.getMessage(),
-                    e
-            );
+                    e);
 
             throw new IllegalStateException(
                     "Failed to send OTP email", e);
