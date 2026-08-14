@@ -37,6 +37,7 @@ public class AuthService {
         this.jwtUtils = jwtUtils;
     }
 
+    @Transactional
     public void register(RegisterRequest request) {
         String email = request.getEmail().trim().toLowerCase();
         if (userRepository.existsByEmail(email)) {
@@ -52,6 +53,7 @@ public class AuthService {
         emailService.sendOtpEmail(email, otp, "Registration Verification OTP");
     }
 
+    @Transactional
     public void verifyRegistrationOtp(String email, String otp) {
 
     email = email.trim().toLowerCase();
@@ -154,6 +156,7 @@ public LoginResponse adminLogin(LoginRequest request) {
             .userId(user.getUserId())
             .build();
 }
+    @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         String email = request.getEmail().trim().toLowerCase();
         User user = userRepository.findByEmail(email)
@@ -164,6 +167,7 @@ public LoginResponse adminLogin(LoginRequest request) {
         emailService.sendOtpEmail(user.getEmail(), otp, "Password Reset OTP");
     }
 
+    @Transactional
     public void verifyForgotPasswordOtp(VerifyForgotPasswordOtpRequest request) {
         String email = request.getEmail().trim().toLowerCase();
         boolean isValid = otpService.validateForgotPasswordOtp(email, request.getOtp());
@@ -174,6 +178,7 @@ public LoginResponse adminLogin(LoginRequest request) {
         otpService.clearForgotPasswordOtp(email);
     }
 
+    @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match");
@@ -194,6 +199,7 @@ public LoginResponse adminLogin(LoginRequest request) {
         otpService.clearEmailVerifiedForReset(email);
     }
 
+    @Transactional
     public void changePassword(ChangePasswordRequest request) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match");
