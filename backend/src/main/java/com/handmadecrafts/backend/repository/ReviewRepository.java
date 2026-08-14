@@ -15,4 +15,7 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
 
     @Query("SELECT COUNT(r) FROM Review r WHERE r.product.productId = :productId")
     Integer getTotalReviewsForProduct(@Param("productId") Integer productId);
+
+    @Query("SELECT r.product.productId, AVG(r.rating), COUNT(r) FROM Review r GROUP BY r.product.productId")
+    List<Object[]> getReviewStatsForAllProducts();
 }

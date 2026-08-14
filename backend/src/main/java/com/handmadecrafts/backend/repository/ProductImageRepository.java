@@ -8,4 +8,5 @@ import com.handmadecrafts.backend.entity.ProductImage;
 
 public interface ProductImageRepository extends JpaRepository<ProductImage, Integer> {
     List<ProductImage> findByProductProductId(Integer productId);
+    List<ProductImage> findByProductProductIdIn(List<Integer> productIds);
 }

@@ -46,9 +46,7 @@ public class ProductService {
 
     System.out.println("TOTAL PRODUCTS = " + products.size());
 
-    return products.stream()
-            .map(this::convertToDto)
-            .collect(Collectors.toList());
+    return convertToDtoList(products);
 }
     public ProductDto getProductById(Integer id) {
         Product product = productRepository.findById(id)
@@ -57,9 +55,8 @@ public class ProductService {
     }
 
     public List<ProductDto> getProductsByCategory(Integer categoryId) {
-        return productRepository.findByCategoryCategoryIdAndActiveTrue(categoryId).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        List<Product> products = productRepository.findByCategoryCategoryIdAndActiveTrue(categoryId);
+        return convertToDtoList(products);
     }
 
     public List<ProductDto> searchProducts(String keyword) {
@@ -90,10 +87,8 @@ public class ProductService {
             sort = Sort.by("name").ascending();
         }
 
-        return productRepository.findAll(specification, sort)
-                .stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        List<Product> products = productRepository.findAll(specification, sort);
+        return convertToDtoList(products);
     }
 
     public List<ProductImageDto> getProductImages(Integer productId) {
@@ -193,9 +188,85 @@ public class ProductService {
     }
 
     public List<ProductDto> getAllProductsForAdmin() {
-        return productRepository.findAll().stream()
-                .map(this::convertToDto)
+        List<Product> products = productRepository.findAll();
+        return convertToDtoList(products);
+    }
+
+    private List<ProductDto> convertToDtoList(List<Product> products) {
+        if (products == null || products.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+
+        List<Integer> productIds = products.stream()
+                .map(Product::getProductId)
                 .collect(Collectors.toList());
+
+        List<ProductImage> allImages = productImageRepository.findByProductProductIdIn(productIds);
+        java.util.Map<Integer, List<ProductImage>> imagesByProductId = allImages.stream()
+                .collect(Collectors.groupingBy(img -> img.getProduct().getProductId()));
+
+        List<Object[]> reviewStatsList = reviewRepository.getReviewStatsForAllProducts();
+        java.util.Map<Integer, Double> avgRatings = new java.util.HashMap<>();
+        java.util.Map<Integer, Long> totalReviews = new java.util.HashMap<>();
+        for (Object[] row : reviewStatsList) {
+            Integer prodId = (Integer) row[0];
+            Double avg = (Double) row[1];
+            Long count = (Long) row[2];
+            avgRatings.put(prodId, avg);
+            totalReviews.put(prodId, count);
+        }
+
+        return products.stream()
+                .map(product -> {
+                    List<ProductImage> images = imagesByProductId.getOrDefault(product.getProductId(), new java.util.ArrayList<>());
+                    Double avgRating = avgRatings.getOrDefault(product.getProductId(), 0.0);
+                    Integer totalReview = totalReviews.getOrDefault(product.getProductId(), 0L).intValue();
+                    return convertToDto(product, images, avgRating, totalReview);
+                })
+                .collect(Collectors.toList());
+    }
+
+    private ProductDto convertToDto(Product product, List<ProductImage> images, Double avgRating, Integer totalReviews) {
+        CategoryDto categoryDto = null;
+        if (product.getCategory() != null) {
+            Category category = product.getCategory();
+            categoryDto = CategoryDto.builder()
+                    .categoryId(category.getCategoryId())
+                    .categoryName(category.getCategoryName())
+                    .build();
+        }
+
+        String imageUrl = null;
+        if (images != null && !images.isEmpty()) {
+            imageUrl = images.stream()
+                    .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
+                    .map(ProductImage::getImageUrl)
+                    .findFirst()
+                    .orElse(images.get(0).getImageUrl());
+        }
+
+        List<ProductImageDto> imageDtos = new java.util.ArrayList<>();
+        if (images != null) {
+            imageDtos = images.stream()
+                    .map(this::convertToImageDto)
+                    .collect(Collectors.toList());
+        }
+
+        return ProductDto.builder()
+                .productId(product.getProductId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .stock(product.getStock())
+                .category(categoryDto)
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .imageUrl(imageUrl)
+                .active(product.getActive())
+                .averageRating(avgRating != null ? avgRating : 0.0)
+                .totalReviews(totalReviews != null ? totalReviews : 0)
+                .images(imageDtos)
+                .build();
     }
 
     private ProductDto convertToDto(Product product) {
