@@ -155,7 +155,8 @@ public LoginResponse adminLogin(LoginRequest request) {
             .build();
 }
     public void forgotPassword(ForgotPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        String email = request.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("No user found with email: " + request.getEmail()));
 
         String otp = otpService.generateOtp();
@@ -164,12 +165,13 @@ public LoginResponse adminLogin(LoginRequest request) {
     }
 
     public void verifyForgotPasswordOtp(VerifyForgotPasswordOtpRequest request) {
-        boolean isValid = otpService.validateForgotPasswordOtp(request.getEmail(), request.getOtp());
+        String email = request.getEmail().trim().toLowerCase();
+        boolean isValid = otpService.validateForgotPasswordOtp(email, request.getOtp());
         if (!isValid) {
             throw new InvalidOtpException("Invalid or expired OTP");
         }
-        otpService.markEmailAsVerifiedForReset(request.getEmail());
-        otpService.clearForgotPasswordOtp(request.getEmail());
+        otpService.markEmailAsVerifiedForReset(email);
+        otpService.clearForgotPasswordOtp(email);
     }
 
     public void resetPassword(ResetPasswordRequest request) {
@@ -177,18 +179,19 @@ public LoginResponse adminLogin(LoginRequest request) {
             throw new IllegalArgumentException("Passwords do not match");
         }
 
-        if (!otpService.isEmailVerifiedForReset(request.getEmail())) {
+        String email = request.getEmail().trim().toLowerCase();
+        if (!otpService.isEmailVerifiedForReset(email)) {
             throw new InvalidOtpException("Email verification is missing or expired. Please verify OTP first.");
         }
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("No user found with email: " + request.getEmail()));
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setUpdatedAt(LocalDate.now().toString());
         userRepository.save(user);
 
-        otpService.clearEmailVerifiedForReset(request.getEmail());
+        otpService.clearEmailVerifiedForReset(email);
     }
 
     public void changePassword(ChangePasswordRequest request) {

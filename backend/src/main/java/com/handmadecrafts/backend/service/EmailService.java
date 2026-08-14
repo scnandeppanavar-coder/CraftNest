@@ -14,13 +14,20 @@ public class EmailService {
 
     private final Resend resend;
     private final String fromAddress;
+    private final String apiKey;
 
     public EmailService(
             @Value("${RESEND_API_KEY}") String apiKey,
             @Value("${app.mail.from:onboarding@resend.dev}") String fromAddress) {
 
+        this.apiKey = apiKey;
         this.resend = new Resend(apiKey);
-        this.fromAddress = fromAddress;
+
+        if (fromAddress == null || fromAddress.isBlank()) {
+            this.fromAddress = "onboarding@resend.dev";
+        } else {
+            this.fromAddress = fromAddress;
+        }
     }
 
     public void sendOtpEmail(String toEmail, String otp, String subject) {
@@ -28,6 +35,12 @@ public class EmailService {
         log.info("Preparing Resend OTP email: to={}, from={}",
                 maskEmail(toEmail),
                 maskEmail(fromAddress));
+
+        if (apiKey == null || apiKey.isBlank() || apiKey.equals("dummy")) {
+            String msg = "Resend API key is missing or not configured.";
+            log.error("Resend OTP send failed. Diagnostic: {}", msg);
+            throw new IllegalStateException("Failed to send OTP email: " + msg);
+        }
 
         try {
 
@@ -179,20 +192,26 @@ public class EmailService {
             );
 
         } catch (ResendException e) {
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "";
+            String diagnostic = "Resend API error";
 
-            log.error(
-                    "Resend OTP send failed. to={}, from={}, error={}",
+            if (errorMsg.contains("restriction") || errorMsg.contains("onboarding@resend.dev") || errorMsg.contains("not verified")) {
+                diagnostic = "Recipient restricted by Resend sandbox limits. Use your registered Resend-account email address for testing.";
+            } else if (errorMsg.contains("401") || errorMsg.contains("Unauthorized") || errorMsg.contains("invalid api key")) {
+                diagnostic = "Resend authentication failure. Check if the RESEND_API_KEY environment variable is valid.";
+            }
+
+            log.error("Resend OTP send failed. Diagnostic: {}. to={}, from={}, details={}",
+                    diagnostic,
                     maskEmail(toEmail),
                     maskEmail(fromAddress),
-                    e.getMessage(),
+                    errorMsg,
                     e
             );
 
-            throw new IllegalStateException(
-                    "Failed to send OTP email", e);
+            throw new IllegalStateException("Failed to send OTP email: " + diagnostic, e);
 
         } catch (Exception e) {
-
             log.error(
                     "Unexpected error while sending OTP. to={}, error={}",
                     maskEmail(toEmail),
@@ -200,8 +219,7 @@ public class EmailService {
                     e
             );
 
-            throw new IllegalStateException(
-                    "Failed to send OTP email", e);
+            throw new IllegalStateException("Failed to send OTP email: Unexpected server error", e);
         }
     }
 
