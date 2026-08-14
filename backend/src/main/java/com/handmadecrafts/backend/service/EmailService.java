@@ -1,46 +1,35 @@
 package com.handmadecrafts.backend.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.resend.Resend;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
+import com.resend.core.exception.ResendException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final Resend resend;
     private final String fromAddress;
 
     public EmailService(
-            JavaMailSender mailSender,
-            @Value("${app.mail.from:${spring.mail.username:}}") String fromAddress) {
+            @Value("${RESEND_API_KEY}") String apiKey,
+            @Value("${app.mail.from:onboarding@resend.dev}") String fromAddress) {
 
-        this.mailSender = mailSender;
+        this.resend = new Resend(apiKey);
         this.fromAddress = fromAddress;
     }
 
     public void sendOtpEmail(String toEmail, String otp, String subject) {
 
-        log.info("Preparing SMTP OTP email: to={}, from={}",
+        log.info("Preparing Resend OTP email: to={}, from={}",
                 maskEmail(toEmail),
                 maskEmail(fromAddress));
 
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, true, "UTF-8");
-
-            if (fromAddress != null && !fromAddress.isBlank()) {
-                helper.setFrom(fromAddress);
-            }
-
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
 
             String htmlBody = """
                     <!DOCTYPE html>
@@ -174,20 +163,30 @@ public class EmailService {
                     </html>
                     """.formatted(otp);
 
-            helper.setText(htmlBody, true);
+            CreateEmailOptions params = CreateEmailOptions.builder()
+                    .from(fromAddress)
+                    .to(toEmail)
+                    .subject(subject)
+                    .html(htmlBody)
+                    .build();
 
-            mailSender.send(message);
+            CreateEmailResponse response = resend.emails().send(params);
 
-            log.info("OTP email successfully sent to {}",
-                    maskEmail(toEmail));
+            log.info(
+                    "OTP email successfully sent to {}, emailId={}",
+                    maskEmail(toEmail),
+                    response.getId()
+            );
 
-        } catch (MessagingException e) {
+        } catch (ResendException e) {
 
-            log.error("SMTP OTP send failed. to={}, from={}, error={}",
+            log.error(
+                    "Resend OTP send failed. to={}, from={}, error={}",
                     maskEmail(toEmail),
                     maskEmail(fromAddress),
                     e.getMessage(),
-                    e);
+                    e
+            );
 
             throw new IllegalStateException(
                     "Failed to send OTP email", e);
