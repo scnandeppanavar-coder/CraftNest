@@ -87,4 +87,22 @@ export const authService = {
     });
     return response.data;
   },
+
+  registerAdmin: async (username, email, password, fullName) => {
+    const response = await apiClient.post('/api/auth/admin/register', {
+      username,
+      email,
+      password,
+      fullName,
+    });
+    return response.data;
+  },
+
+  verifyAdminRegistrationOtp: async (email, otp) => {
+    const response = await apiClient.post('/api/auth/admin/verify-register', {
+      email,
+      otp,
+    });
+    return response.data;
+  },
 };

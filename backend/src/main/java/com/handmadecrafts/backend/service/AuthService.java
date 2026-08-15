@@ -196,4 +196,44 @@ public LoginResponse adminLogin(LoginRequest request) {
         user.setUpdatedAt(LocalDate.now().toString());
         userRepository.save(user);
     }
+
+    @Transactional
+    public void registerAdmin(RegisterRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException("Email is already registered");
+        }
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new UsernameAlreadyExistsException("Username is already taken");
+        }
+
+        String otp = otpService.generateOtp();
+        otpService.storeAdminRegistrationOtp(email, request, otp);
+        System.out.println("Stored Admin OTP for: " + request.getEmail() + " = " + otp);
+        emailService.sendOtpEmail(email, otp, "Admin Registration Verification OTP");
+    }
+
+    @Transactional
+    public void verifyAdminRegistrationOtp(String email, String otp) {
+        email = email.trim().toLowerCase();
+        otp = otp.trim();
+
+        RegisterRequest registerRequest =
+                otpService.getAndValidateAdminRegistrationRequest(email, otp);
+
+        if (registerRequest == null) {
+            throw new InvalidOtpException("Invalid or expired OTP");
+        }
+
+        User user = User.builder()
+                .username(registerRequest.getUsername())
+                .email(registerRequest.getEmail())
+                .fullName(registerRequest.getFullName())
+                .password(passwordEncoder.encode(registerRequest.getPassword()))
+                .role(Role.ADMIN)
+                .createdAt(LocalDate.now())
+                .build();
+
+        userRepository.save(user);
+    }
 }

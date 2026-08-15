@@ -51,6 +51,7 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/admin/register", "/api/auth/admin/verify-register").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/chat/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()

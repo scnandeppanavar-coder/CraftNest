@@ -31,9 +31,37 @@ public class OtpService {
     }
 
     private final Map<String, RegistrationTempData> registrationCache = new ConcurrentHashMap<>();
+    private final Map<String, RegistrationTempData> adminRegistrationCache = new ConcurrentHashMap<>();
     private final Map<String, OtpData> forgotPasswordCache = new ConcurrentHashMap<>();
     private final Map<String, LocalDateTime> verifiedResetEmails = new ConcurrentHashMap<>();
     private final SecureRandom secureRandom = new SecureRandom();
+
+    public void storeAdminRegistrationOtp(String email, RegisterRequest request, String otp) {
+        email = email.trim().toLowerCase();
+        LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
+        adminRegistrationCache.put(email, new RegistrationTempData(request, otp, expiry));
+    }
+
+    public RegisterRequest getAndValidateAdminRegistrationRequest(String email, String otp) {
+        email = email.trim().toLowerCase();
+        otp = otp.trim();
+        RegistrationTempData tempData = adminRegistrationCache.get(email);
+        if (tempData == null) {
+            return null;
+        }
+
+        if (LocalDateTime.now().isAfter(tempData.getExpiryTime())) {
+            adminRegistrationCache.remove(email);
+            return null;
+        }
+
+        if (!tempData.getOtp().equals(otp)) {
+            return null;
+        }
+
+        adminRegistrationCache.remove(email);
+        return tempData.getRegisterRequest();
+    }
 
     public String generateOtp() {
         int otpVal = 100000 + secureRandom.nextInt(900000);

@@ -18,6 +18,7 @@ import com.handmadecrafts.backend.dto.ResetPasswordRequest;
 import com.handmadecrafts.backend.dto.VerifyForgotPasswordOtpRequest;
 import com.handmadecrafts.backend.dto.VerifyRegistrationOtpRequest;
 import com.handmadecrafts.backend.service.AuthService;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import jakarta.validation.Valid;
 
@@ -133,6 +134,32 @@ public class AuthController {
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "Password changed successfully.");
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/admin/register")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> registerAdmin(
+            @Valid @RequestBody RegisterRequest request) {
+
+        authService.registerAdmin(request);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "OTP sent successfully to admin email. Please verify.");
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/admin/verify-register")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> verifyAdminRegistrationOtp(
+            @Valid @RequestBody VerifyRegistrationOtpRequest request) {
+
+        authService.verifyAdminRegistrationOtp(request.getEmail(), request.getOtp());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Admin account created successfully.");
 
         return ResponseEntity.ok(response);
     }

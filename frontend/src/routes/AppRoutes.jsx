@@ -212,6 +212,15 @@ const AppRoutes = () => {
         />
 
         <Route
+          path="admin/register"
+          element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminDashboard initialTab="admins" />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="admin/inventory"
           element={
             <ProtectedRoute adminOnly={true}>

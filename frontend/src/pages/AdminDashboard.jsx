@@ -27,6 +27,7 @@ import { categoryService } from '../services/categoryService';
 import { orderService } from '../services/orderService';
 import { userService } from '../services/userService';
 import { useToast } from '../context/ToastContext';
+import AdminRegister from '../components/AdminRegister';
 
 const AdminDashboard = ({ initialTab = 'overview' }) => {
   const { showToast } = useToast();
@@ -64,6 +65,7 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
     { key: 'categories', path: '/admin/categories', label: 'Categories', icon: FolderOpen },
     { key: 'orders', path: '/admin/orders', label: 'Orders', icon: ClipboardList },
     { key: 'customers', path: '/admin/customers', label: 'Customers', icon: Users },
+    { key: 'admins', path: '/admin/register', label: 'Manage Admins', icon: ShieldAlert },
     { key: 'inventory', path: '/admin/inventory', label: 'Inventory', icon: Warehouse },
     { key: 'settings', path: '/admin/dashboard', label: 'Settings', icon: Settings },
     { key: 'logout', path: '/admin/login', label: 'Logout', icon: LogOut },
@@ -848,6 +850,12 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
                   </table>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'admins' && (
+            <div className="animate-fade-in-up">
+              <AdminRegister />
             </div>
           )}
 
