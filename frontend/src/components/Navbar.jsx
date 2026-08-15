@@ -24,6 +24,16 @@ const Navbar = () => {
   const searchRef = useRef(null);
   const profileRef = useRef(null);
 
+  const getWelcomeName = (username) => {
+    if (!username) return 'Valued Guest';
+    const lower = username.toLowerCase();
+    if (lower === 'user' || lower === 'null' || lower === 'undefined') return 'Valued Guest';
+    return username
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   // Clear suggestions on route change
   useEffect(() => {
     setShowSuggestions(false);
@@ -88,9 +98,9 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link
-  to={isAuthenticated ? "/home" : "/"}
-  className="flex items-center gap-2 group"
->
+              to="/"
+              className="flex items-center gap-2 group"
+            >
               <span className="bg-gradient-to-r from-primary-500 to-primary-600 dark:from-primary-400 dark:to-primary-500 p-2 rounded-xl text-white shadow-md shadow-primary-500/20 group-hover:scale-105 transition-transform">
                 <img src="https://ik.imagekit.io/stringstackseema/handmade%20jewelry/logo.png" alt="CraftNest Logo" className="w-5 h-5 object-contain" />
               </span>
@@ -102,9 +112,9 @@ const Navbar = () => {
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-6">
-            <Link to={isAuthenticated ? "/home" : "/"} className="text-sm font-semibold hover:text-primary-500 dark:hover:text-primary-400 text-secondary-600 dark:text-secondary-300 transition-colors">
-  Home
-</Link>
+             <Link to="/" className="text-sm font-semibold hover:text-primary-500 dark:hover:text-primary-400 text-secondary-600 dark:text-secondary-300 transition-colors">
+              Home
+            </Link>
             <Link to="/categories" className="text-sm font-semibold hover:text-primary-500 dark:hover:text-primary-400 text-secondary-600 dark:text-secondary-300 transition-colors">
               Categories
             </Link>
@@ -196,6 +206,13 @@ const Navbar = () => {
               </>
             )}
 
+            {/* Welcome message */}
+            {isAuthenticated && (
+              <span className="hidden md:inline-block text-xs font-bold text-secondary-700 dark:text-secondary-200 mr-1 select-none animate-fade-in">
+                Welcome, {getWelcomeName(user?.fullName || user?.username)}!
+              </span>
+            )}
+
             {/* Profile Dropdown */}
             {isAuthenticated ? (
               <div className="relative" ref={profileRef}>
@@ -254,12 +271,20 @@ const Navbar = () => {
                 )}
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 active:scale-95 rounded-full shadow-md shadow-primary-500/10 hover:shadow-primary-600/20 transition-all"
-              >
-                Login
-              </Link>
+              <div className="hidden sm:flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 active:scale-95 rounded-full shadow-md shadow-primary-500/10 hover:shadow-primary-600/20 transition-all"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold border border-secondary-200 dark:border-secondary-750 text-secondary-700 dark:text-secondary-200 hover:bg-secondary-100 dark:hover:bg-secondary-800 active:scale-95 rounded-full transition-all"
+                >
+                  Register
+                </Link>
+              </div>
             )}
 
             {/* Mobile Menu Button */}
@@ -276,6 +301,14 @@ const Navbar = () => {
       {/* Mobile Menu Panel */}
       {isOpen && (
         <div className="md:hidden border-t border-secondary-100 dark:border-secondary-800 px-4 py-4 space-y-3 bg-white dark:bg-secondary-900 shadow-xl">
+          {/* Mobile Welcome Message */}
+          {isAuthenticated && (
+            <div className="pb-2 border-b border-secondary-100 dark:border-secondary-800">
+              <p className="text-xs font-bold text-primary-500">
+                Welcome, {getWelcomeName(user?.fullName || user?.username)}!
+              </p>
+            </div>
+          )}
           {/* Mobile Search */}
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <input
@@ -305,23 +338,20 @@ const Navbar = () => {
               Contact
             </Link>
             {!isAuthenticated && (
-               <div className="hidden sm:flex items-center gap-2">
-
-                 <Link
-                   to="/login"
-                   className="px-4 py-2 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-full transition-all"
-                 >
-                   Customer Login
-                 </Link>
-
-                 <Link
-                   to="/admin/login"
-                   className="px-4 py-2 text-xs font-bold text-white bg-secondary-800 hover:bg-secondary-900 rounded-full transition-all"
-                 >
-                   Admin Login
-                 </Link>
-
-               </div>
+              <div className="flex flex-col gap-2 pt-2 border-t border-secondary-100 dark:border-secondary-800">
+                <Link
+                  to="/login"
+                  className="w-full text-center py-2.5 text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-xl transition-all"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="w-full text-center py-2.5 text-sm font-bold border border-secondary-200 dark:border-secondary-750 text-secondary-700 dark:text-secondary-200 hover:bg-secondary-100 dark:hover:bg-secondary-800 rounded-xl transition-all"
+                >
+                  Register
+                </Link>
+              </div>
             )}
           </div>
         </div>

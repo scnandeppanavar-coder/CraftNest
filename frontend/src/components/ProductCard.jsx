@@ -8,7 +8,7 @@ import { useToast } from '../context/ToastContext';
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
   const { isWishlisted, addToWishlist, removeFromWishlist } = useWishlist();
-  const { isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -22,6 +22,12 @@ const ProductCard = ({ product }) => {
   const handleWishlistClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!isAuthenticated) {
+      showToast('Please login to add products to your wishlist.', 'warning');
+      navigate('/login');
+      return;
+    }
 
     if (isAdmin) {
       showToast('Admins cannot add products to wishlist.', 'warning');
@@ -39,6 +45,12 @@ const ProductCard = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
 
+    if (!isAuthenticated) {
+      showToast('Please login to add products to your cart.', 'warning');
+      navigate('/login');
+      return;
+    }
+
     if (isAdmin) {
       showToast('Admins cannot add products to cart.', 'warning');
       return;
@@ -46,12 +58,19 @@ const ProductCard = ({ product }) => {
 
     if (stock > 0) {
       addToCart(product, 1);
+      showToast('Added to cart!', 'success');
     }
   };
 
   const handleBuyNow = (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!isAuthenticated) {
+      showToast('Please login to add products to your cart.', 'warning');
+      navigate('/login');
+      return;
+    }
 
     if (isAdmin) {
       showToast('Admins cannot place orders.', 'warning');

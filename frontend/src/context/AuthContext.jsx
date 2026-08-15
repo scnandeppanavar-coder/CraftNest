@@ -13,11 +13,12 @@ export const AuthProvider = ({ children }) => {
   });
 
   // Login
-  const login = (jwtToken, email, username, role, userId) => {
+  const login = (jwtToken, email, username, fullName, role, userId) => {
 
     const userData = {
       email,
       username,
+      fullName,
       role,
       userId,
     };

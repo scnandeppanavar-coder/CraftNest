@@ -28,6 +28,7 @@ public class UserService {
                         .userId(user.getUserId())
                         .username(user.getUsername())
                         .email(user.getEmail())
+                        .fullName(user.getFullName())
                         .role(user.getRole())
                         .createdAt(user.getCreatedAt())
                         .build())
@@ -59,12 +60,15 @@ public class UserService {
             user.setEmail(userDto.getEmail());
         }
 
+        user.setFullName(userDto.getFullName());
+
         user = userRepository.save(user);
 
         return UserDto.builder()
                 .userId(user.getUserId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .fullName(user.getFullName())
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .build();

@@ -5,10 +5,12 @@ import { authService } from '../services/authService';
 import { useToast } from '../context/ToastContext';
 
 const Register = () => {
+  const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('COUSTMER');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('CUSTOMER');
   const [loading, setLoading] = useState(false);
 
   const { showToast } = useToast();
@@ -16,7 +18,7 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!username || !email || !password || !role) {
+    if (!fullName.trim() || !username.trim() || !email.trim() || !password || !confirmPassword) {
       showToast('Please fill all fields', 'warning');
       return;
     }
@@ -24,10 +26,14 @@ const Register = () => {
       showToast('Password must be at least 6 characters long', 'warning');
       return;
     }
+    if (password !== confirmPassword) {
+      showToast('Passwords do not match', 'warning');
+      return;
+    }
 
     setLoading(true);
     try {
-      await authService.register(username, email, password);
+      await authService.register(username, email, password, fullName);
       showToast('OTP sent successfully to your email. Please verify.', 'success');
       // Redirect to OTP verification page with the email in state
       navigate('/verify-registration-otp', { state: { email } });
@@ -54,6 +60,25 @@ const Register = () => {
 
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           <div className="space-y-4">
+            {/* Full Name */}
+            <div>
+              <label htmlFor="fullName" className="text-xs font-semibold text-secondary-500 dark:text-secondary-400 block mb-1.5 ml-1">
+                Full Name
+              </label>
+              <div className="relative">
+                <input
+                  id="fullName"
+                  type="text"
+                  required
+                  placeholder="Seema CN"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-secondary-50 dark:bg-secondary-800/50 border border-secondary-200 dark:border-secondary-750 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-2xl text-sm focus:outline-none dark:text-white transition-all"
+                />
+                <User className="absolute left-3.5 top-3.5 w-4 h-4 text-secondary-400" />
+              </div>
+            </div>
+
             {/* Username */}
             <div>
               <label htmlFor="username" className="text-xs font-semibold text-secondary-500 dark:text-secondary-400 block mb-1.5 ml-1">
@@ -111,21 +136,22 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Role selection */}
+            {/* Confirm Password */}
             <div>
-              <label htmlFor="role" className="text-xs font-semibold text-secondary-500 dark:text-secondary-400 block mb-1.5 ml-1">
-                Register As
+              <label htmlFor="confirmPassword" className="text-xs font-semibold text-secondary-500 dark:text-secondary-400 block mb-1.5 ml-1">
+                Confirm Password
               </label>
               <div className="relative">
-                <select
-                  id="role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-secondary-50 dark:bg-secondary-800/50 border border-secondary-200 dark:border-secondary-750 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-2xl text-sm focus:outline-none dark:text-white transition-all appearance-none cursor-pointer"
-                >
-                  <option value="CUSTOMER" className="dark:bg-secondary-800">Customer</option>
-                </select>
-                <Shield className="absolute left-3.5 top-3.5 w-4 h-4 text-secondary-400" />
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  placeholder="Re-enter password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-secondary-50 dark:bg-secondary-800/50 border border-secondary-200 dark:border-secondary-750 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-2xl text-sm focus:outline-none dark:text-white transition-all"
+                />
+                <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-secondary-400" />
               </div>
             </div>
           </div>

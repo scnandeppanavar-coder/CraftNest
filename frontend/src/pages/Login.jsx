@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +14,7 @@ const Login = () => {
   const { login } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,6 +23,16 @@ const Login = () => {
       showToast('Please fill all fields', 'warning');
       return;
     }
+
+    const getWelcomeName = (username) => {
+      if (!username) return '';
+      const lower = username.toLowerCase();
+      if (lower === 'user' || lower === 'null' || lower === 'undefined') return '';
+      return username
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    };
 
     setLoading(true);
 
@@ -40,15 +51,18 @@ const Login = () => {
         data.token,
         data.email,
         data.username,
+        data.fullName,
         data.role,
         data.userId
       );
       console.log(sessionStorage.getItem("token"));
       console.log(sessionStorage.getItem("user"));
 
-      showToast("Welcome back!", "success");
+      const welcomeName = getWelcomeName(data.fullName || data.username);
+      showToast(welcomeName ? `Welcome, ${welcomeName}!` : "Welcome back!", "success");
 
-      navigate("/home", { replace: true });
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
 
     } catch (error) {
       console.error(error);

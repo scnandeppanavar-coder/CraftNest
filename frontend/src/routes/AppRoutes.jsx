@@ -38,15 +38,8 @@ const AppRoutes = () => {
       <Route path="/" element={<Layout />}>
 
         {/* Public Pages */}
-        <Route index element={<LoginSelection />} />
-        <Route
-  path="home"
-  element={
-    <ProtectedRoute>
-      <Home />
-    </ProtectedRoute>
-  }
-/>
+        <Route index element={<Home />} />
+        <Route path="home" element={<Home />} />
         <Route path="categories" element={<Category />} />
         <Route path="products" element={<Products />} />
         <Route path="products/:id" element={<ProductDetails />} />
@@ -58,7 +51,7 @@ const AppRoutes = () => {
           path="login"
           element={
             isAuthenticated
-              ? <Navigate to="/home" replace />
+              ? <Navigate to="/" replace />
               : <Login />
           }
         />
@@ -78,7 +71,7 @@ const AppRoutes = () => {
           path="register"
           element={
             isAuthenticated
-              ? <Navigate to="/home" replace />
+              ? <Navigate to="/" replace />
               : <Register />
           }
         />
@@ -87,7 +80,7 @@ const AppRoutes = () => {
           path="verify-registration-otp"
           element={
             isAuthenticated
-              ? <Navigate to="/home" replace />
+              ? <Navigate to="/" replace />
               : <VerifyRegistrationOtp />
           }
         />
@@ -96,7 +89,7 @@ const AppRoutes = () => {
           path="forgot-password"
           element={
             isAuthenticated
-              ? <Navigate to="/home" replace />
+              ? <Navigate to="/" replace />
               : <ForgotPassword />
           }
         />
@@ -105,7 +98,7 @@ const AppRoutes = () => {
           path="verify-forgot-password-otp"
           element={
             isAuthenticated
-              ? <Navigate to="/home" replace />
+              ? <Navigate to="/" replace />
               : <VerifyForgotPasswordOtp />
           }
         />
@@ -114,30 +107,15 @@ const AppRoutes = () => {
           path="reset-password"
           element={
             isAuthenticated
-              ? <Navigate to="/home" replace />
+              ? <Navigate to="/" replace />
               : <ResetPassword />
           }
         />
 
         {/* Customer Protected Routes */}
 
-        <Route
-          path="cart"
-          element={
-            <ProtectedRoute customerOnly={true}>
-              <Cart />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="wishlist"
-          element={
-            <ProtectedRoute customerOnly={true}>
-              <Wishlist />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="cart" element={<Cart />} />
+        <Route path="wishlist" element={<Wishlist />} />
 
         <Route
           path="checkout"

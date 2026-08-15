@@ -52,6 +52,7 @@ const Profile = () => {
   // Details States
   const [username, setUsername] = useState(user?.username || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [fullName, setFullName] = useState(user?.fullName || '');
   const [editDetailsMode, setEditDetailsMode] = useState(false);
   const [updatingDetails, setUpdatingDetails] = useState(false);
 
@@ -91,6 +92,7 @@ const Profile = () => {
     if (user) {
       setUsername(user.username);
       setEmail(user.email);
+      setFullName(user.fullName || '');
     }
   }, [user]);
 
@@ -161,8 +163,8 @@ const Profile = () => {
     }
     setUpdatingDetails(true);
     try {
-      const updated = await userService.updateProfile(user.userId, { username, email });
-      updateUser({ username: updated.username, email: updated.email });
+      const updated = await userService.updateProfile(user.userId, { username, email, fullName });
+      updateUser({ username: updated.username, email: updated.email, fullName: updated.fullName });
       showToast('Profile details updated successfully', 'success');
       setEditDetailsMode(false);
     } catch (error) {
@@ -429,6 +431,7 @@ const Profile = () => {
                           setEditDetailsMode(false);
                           setUsername(user?.username || '');
                           setEmail(user?.email || '');
+                          setFullName(user?.fullName || '');
                         }}
                         className="text-xs text-secondary-400 hover:text-secondary-600 dark:hover:text-secondary-200 font-semibold cursor-pointer"
                       >
@@ -438,6 +441,21 @@ const Profile = () => {
                   </div>
 
                   <form onSubmit={handleUpdateDetails} className="space-y-4">
+                    {/* Full Name */}
+                    <div>
+                      <label className="text-xs font-semibold text-secondary-500 dark:text-secondary-400 block mb-1.5 ml-1">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        disabled={!editDetailsMode}
+                        placeholder="Not set"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full px-4 py-3 bg-secondary-50 disabled:opacity-75 disabled:bg-secondary-100/50 dark:bg-secondary-800/50 dark:disabled:bg-secondary-900/50 border border-secondary-200 dark:border-secondary-750 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-2xl text-xs focus:outline-none dark:text-white transition-all"
+                      />
+                    </div>
+
                     {/* Username */}
                     <div>
                       <label className="text-xs font-semibold text-secondary-500 dark:text-secondary-400 block mb-1.5 ml-1">

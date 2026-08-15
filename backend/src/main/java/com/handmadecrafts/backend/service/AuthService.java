@@ -65,6 +65,7 @@ public class AuthService {
     User user = User.builder()
             .username(registerRequest.getUsername())
             .email(registerRequest.getEmail())
+            .fullName(registerRequest.getFullName())
             .password(passwordEncoder.encode(registerRequest.getPassword()))
             .role(Role.CUSTOMER)
             .createdAt(LocalDate.now())
@@ -98,6 +99,7 @@ public class AuthService {
             .token(token)
             .email(user.getEmail())
             .username(user.getUsername())
+            .fullName(user.getFullName())
             .role(user.getRole().name())
             .userId(user.getUserId())
             .build();
@@ -126,6 +128,7 @@ public LoginResponse adminLogin(LoginRequest request) {
             .token(token)
             .email(user.getEmail())
             .username(user.getUsername())
+            .fullName(user.getFullName())
             .role(user.getRole().name())
             .userId(user.getUserId())
             .build();

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Trash2, ArrowRight } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const Wishlist = () => {
+  const { isAuthenticated } = useAuth();
   const { wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
 
@@ -18,6 +20,23 @@ const Wishlist = () => {
     addToCart(product, 1);
     removeFromWishlist(item.productId);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center max-w-md mx-auto p-8 bg-white dark:bg-secondary-900 border border-secondary-200/60 dark:border-secondary-800 rounded-3xl shadow-md my-12 animate-fade-in-up">
+        <Heart className="w-14 h-14 text-rose-500 mb-4 fill-current" />
+        <h2 className="text-2xl font-bold mb-2">Please login to view your wishlist</h2>
+        <p className="text-sm text-secondary-500 mb-6">You need to sign in to access your bookmarked creations and manage your wishlist.</p>
+        <Link
+          to="/login"
+          state={{ from: { pathname: '/wishlist' } }}
+          className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-xl font-bold w-full active:scale-95 transition-all text-center"
+        >
+          Login
+        </Link>
+      </div>
+    );
+  }
 
   if (wishlistItems.length === 0) {
       React.useEffect(() => {

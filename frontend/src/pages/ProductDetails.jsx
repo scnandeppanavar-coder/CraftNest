@@ -13,7 +13,7 @@ const ProductDetails = () => {
   const { showToast } = useToast();
   const { addToCart } = useCart();
   const { isWishlisted, addToWishlist, removeFromWishlist } = useWishlist();
-  const { isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
 
   const [product, setProduct] = useState(null);
   const [images, setImages] = useState([]);
@@ -57,6 +57,12 @@ const ProductDetails = () => {
   }, [id, navigate]);
 
   const handleWishlistToggle = () => {
+    if (!isAuthenticated) {
+      showToast('Please login to add products to your wishlist.', 'warning');
+      navigate('/login');
+      return;
+    }
+
     if (isAdmin) {
       showToast('Admins cannot add products to wishlist.', 'warning');
       return;
@@ -70,6 +76,12 @@ const ProductDetails = () => {
   };
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      showToast('Please login to add products to your cart.', 'warning');
+      navigate('/login');
+      return;
+    }
+
     if (isAdmin) {
       showToast('Admins cannot add products to cart.', 'warning');
       return;
@@ -77,10 +89,17 @@ const ProductDetails = () => {
 
     if (product && product.stock > 0) {
       addToCart(product, quantity);
+      showToast('Added to cart!', 'success');
     }
   };
 
   const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      showToast('Please login to add products to your cart.', 'warning');
+      navigate('/login');
+      return;
+    }
+
     if (isAdmin) {
       showToast('Admins cannot place orders.', 'warning');
       return;

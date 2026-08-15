@@ -13,14 +13,14 @@ const ProtectedRoute = ({ children, adminOnly = false, customerOnly = false }) =
     }
 
     if (customerOnly) {
-      return <Navigate to="/" state={{ from: location }} replace />;
+      return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    return <Navigate to="/" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (adminOnly && user?.role !== 'ADMIN') {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (customerOnly && user?.role !== 'CUSTOMER') {

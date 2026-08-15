@@ -6,12 +6,12 @@ export const authService = {
   // Register
   // ==========================
 
-  register: async (username, email, password, role) => {
+  register: async (username, email, password, fullName) => {
     const response = await apiClient.post('/api/auth/register', {
       username,
       email,
       password,
-      role,
+      fullName,
     });
     return response.data;
   },
