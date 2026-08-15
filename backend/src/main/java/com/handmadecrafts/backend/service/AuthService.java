@@ -3,7 +3,6 @@ package com.handmadecrafts.backend.service;
 import com.handmadecrafts.backend.dto.*;
 import com.handmadecrafts.backend.entity.*;
 import com.handmadecrafts.backend.exception.*;
-import com.handmadecrafts.backend.repository.JwtTokenRepository;
 import com.handmadecrafts.backend.repository.UserRepository;
 import com.handmadecrafts.backend.security.JwtUtils;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,20 +16,17 @@ import java.time.LocalDate;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final JwtTokenRepository jwtTokenRepository;
     private final OtpService otpService;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
 
     public AuthService(UserRepository userRepository,
-                       JwtTokenRepository jwtTokenRepository,
                        OtpService otpService,
                        EmailService emailService,
                        PasswordEncoder passwordEncoder,
                        JwtUtils jwtUtils) {
         this.userRepository = userRepository;
-        this.jwtTokenRepository = jwtTokenRepository;
         this.otpService = otpService;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
@@ -98,17 +94,6 @@ public class AuthService {
 
     String token = jwtUtils.generateToken(user.getEmail());
 
-    jwtTokenRepository.deleteByUserUserId(user.getUserId());
-
-    JwtToken jwtToken = JwtToken.builder()
-            .user(user)
-            .token(token)
-            .createdAt(LocalDate.now())
-            .expiresAt(LocalDate.now().plusDays(1))
-            .build();
-
-    jwtTokenRepository.save(jwtToken);
-
     return LoginResponse.builder()
             .token(token)
             .email(user.getEmail())
@@ -136,17 +121,6 @@ public LoginResponse adminLogin(LoginRequest request) {
     }
 
     String token = jwtUtils.generateToken(user.getEmail());
-
-    jwtTokenRepository.deleteByUserUserId(user.getUserId());
-
-    JwtToken jwtToken = JwtToken.builder()
-            .user(user)
-            .token(token)
-            .createdAt(LocalDate.now())
-            .expiresAt(LocalDate.now().plusDays(1))
-            .build();
-
-    jwtTokenRepository.save(jwtToken);
 
     return LoginResponse.builder()
             .token(token)
