@@ -11,6 +11,8 @@ import {
   BadgeCheck,
   Truck,
   Headphones,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { productService } from '../services/productService';
@@ -24,6 +26,109 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [emailInput, setEmailInput] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
+
+  // Carousel State
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Dynamic category mapping based on categories loaded from database
+  const jewelleryCategory = categories.find(c => {
+    const name = c.categoryName?.toLowerCase() || '';
+    return name.includes('jewel') || name.includes('accessory') || name.includes('bag');
+  });
+
+  const giftsCategory = categories.find(c => {
+    const name = c.categoryName?.toLowerCase() || '';
+    return name.includes('gift') || name.includes('decor') || name.includes('home') || name.includes('card');
+  });
+
+  const jewelleryLink = jewelleryCategory ? `/products?category=${jewelleryCategory.categoryId}` : '/products';
+  const giftsLink = giftsCategory ? `/products?category=${giftsCategory.categoryId}` : '/products';
+
+  const slides = [
+    {
+      theme: "Handmade Craft Collection",
+      tagline: "100% Handmade & Sustainable",
+      heading: "Handmade Treasures, Made With Love",
+      subtext: "Discover unique handcrafted pieces created to bring warmth, beauty and personality to your everyday life.",
+      buttonText: "Shop Collection",
+      buttonLink: "/products",
+      image: "https://images.unsplash.com/photo-1606744824163-985d376605aa?auto=format&fit=crop&w=1000&q=80"
+    },
+    {
+      theme: "Jewellery & Accessories",
+      tagline: "Elegant & Sparkling Accessories",
+      heading: "Add a Little Sparkle",
+      subtext: "Explore beautiful handmade jewellery and accessories designed to make every moment special.",
+      buttonText: "Explore Jewellery",
+      buttonLink: jewelleryLink,
+      image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1000&q=80"
+    },
+    {
+      theme: "Gifts & Home Decor",
+      tagline: "Meaningful Gifts & Beautiful Spaces",
+      heading: "Thoughtful Gifts, Beautiful Spaces",
+      subtext: "Find meaningful gifts and charming home decor for every occasion.",
+      buttonText: "Explore Gifts",
+      buttonLink: giftsLink,
+      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1000&q=80"
+    }
+  ];
+
+  // Handle Auto-slide rotation (5 seconds)
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [currentSlide, isPaused]);
+
+  // Touch handlers for mobile swipe gesture support
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    } else if (isRightSwipe) {
+      setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    }
+  };
+
+  const handlePrevSlide = (e) => {
+    e.stopPropagation();
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
+  const handleNextSlide = (e) => {
+    e.stopPropagation();
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  // Keyboard navigation support
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowLeft') {
+      setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    } else if (e.key === 'ArrowRight') {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }
+  };
+
 
   useEffect(() => {
     const loadHomeData = async () => {
@@ -87,58 +192,109 @@ const Home = () => {
 
   return (
     <div className="space-y-20 pb-16 animate-fade-in-up">
-      <section className="relative overflow-hidden rounded-[30px] border border-[#F1E8DD] bg-[#FAF7F2] shadow-[0_30px_80px_rgba(109,82,53,0.08)] transition-all duration-500 dark:border-secondary-800 dark:bg-secondary-950">
-        <div className="absolute -left-20 top-8 h-56 w-56 rounded-full bg-[#F2E3C7]/60 blur-3xl dark:bg-primary-500/10" />
-        <div className="absolute -right-10 bottom-0 h-64 w-64 rounded-full bg-[#E9D7C6]/60 blur-3xl dark:bg-primary-500/10" />
+      <section
+        className="relative overflow-hidden rounded-[30px] border border-[#F1E8DD] bg-[#FAF7F2] shadow-[0_30px_80px_rgba(109,82,53,0.08)] transition-all duration-500 dark:border-secondary-800 dark:bg-secondary-950 w-full min-h-[640px] sm:min-h-[680px] lg:min-h-[520px] xl:min-h-[580px] flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B9723D] focus-visible:ring-offset-2"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onKeyDown={handleKeyDown}
+        tabIndex="0"
+        aria-label="CraftNest Hero Carousel. Use arrow keys to navigate slides."
+      >
+        <div className="absolute -left-20 top-8 h-56 w-56 rounded-full bg-[#F2E3C7]/60 blur-3xl dark:bg-primary-500/10 pointer-events-none" />
+        <div className="absolute -right-10 bottom-0 h-64 w-64 rounded-full bg-[#E9D7C6]/60 blur-3xl dark:bg-primary-500/10 pointer-events-none" />
 
-        <div className="relative grid items-center gap-10 px-6 py-8 sm:px-10 md:px-12 lg:grid-cols-2 lg:px-16 lg:py-16">
-          <div className="space-y-7">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#E8D9C4] bg-white/80 px-4 py-2 text-sm font-bold text-[#7C5A3A] shadow-sm backdrop-blur-sm transition-transform duration-300 hover:scale-[1.02] dark:border-secondary-700 dark:bg-secondary-900/80 dark:text-primary-300">
-              <Sparkles className="h-4 w-4" />
-              100% Handmade & Sustainable
-            </span>
+        {slides.map((slide, index) => {
+          const isActive = index === currentSlide;
+          return (
+            <div
+              key={index}
+              className={`absolute inset-0 w-full h-full grid items-center gap-10 px-6 py-12 sm:px-10 md:px-12 lg:grid-cols-2 lg:px-16 lg:py-16 transition-all duration-700 ease-in-out ${
+                isActive
+                  ? "opacity-100 pointer-events-auto z-10 scale-100"
+                  : "opacity-0 pointer-events-none z-0 scale-[0.98]"
+              }`}
+              aria-hidden={!isActive}
+            >
+              <div className={`space-y-7 transition-all duration-700 delay-100 ${isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#E8D9C4] bg-white/80 px-4 py-2 text-sm font-bold text-[#7C5A3A] shadow-sm backdrop-blur-sm transition-transform duration-300 hover:scale-[1.02] dark:border-secondary-700 dark:bg-secondary-900/80 dark:text-primary-300">
+                  <Sparkles className="h-4 w-4" />
+                  {slide.tagline}
+                </span>
 
-            <div className="space-y-4">
-              <h1 className="font-outfit text-4xl font-black leading-[1.05] tracking-[-0.04em] text-[#2C241E] dark:text-white sm:text-5xl lg:text-6xl">
-                Discover Authentic
-                <span className="mt-2 block text-[#C88652] dark:text-primary-400">Handmade Crafts</span>
-              </h1>
+                <div className="space-y-4">
+                  <h1 className="font-outfit text-4xl font-black leading-[1.05] tracking-[-0.04em] text-[#2C241E] dark:text-white sm:text-5xl lg:text-6xl">
+                    {slide.heading}
+                  </h1>
 
-              <p className="max-w-xl text-base leading-8 text-[#5F584F] dark:text-secondary-300">
-                Handpicked pieces made with soul, skill, and lasting quality. Explore artisan treasures designed to bring warmth, character, and story into everyday life.
-              </p>
-            </div>
+                  <p className="max-w-xl text-base leading-8 text-[#5F584F] dark:text-secondary-300">
+                    {slide.subtext}
+                  </p>
+                </div>
 
-            <div className="flex flex-wrap gap-4 pt-2">
-              <Link
-                to="/products"
-                className="inline-flex items-center gap-2 rounded-full bg-[#B9723D] px-6 py-3 text-sm font-bold text-white shadow-[0_18px_35px_rgba(185,114,61,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#a76331]"
-              >
-                Shop Collection
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-
-              <Link
-                to="/categories"
-                className="inline-flex items-center gap-2 rounded-full border border-[#DABF9B] bg-white/80 px-6 py-3 text-sm font-bold text-[#533C2E] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B9723D] hover:bg-[#F8EDE3] dark:border-secondary-700 dark:bg-secondary-900/80 dark:text-primary-300 dark:hover:bg-secondary-800"
-              >
-                Explore Categories
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex justify-center lg:justify-end">
-            <div className="group relative w-full max-w-[560px] overflow-hidden rounded-[28px] border border-[#E9D9C5] bg-white/40 p-3 shadow-[0_30px_70px_rgba(92,65,45,0.12)] transition-all duration-500 hover:shadow-[0_35px_80px_rgba(92,65,45,0.18)] dark:border-secondary-800 dark:bg-secondary-900/60">
-              <div className="overflow-hidden rounded-[24px]">
-                <img
-                  src="https://images.openai.com/static-rsc-4/tqryxT7d0BCc659BvA5hSIEPwAsqrkbrbCBkJ_2lWzL2jmXNx2h-0dmbrfzWmD-pV7cF5ONnFJy51LVvW8E4ueIRjxdCj6UIHGIDPI4yKsotlrlyGSt7xKoD7uV9tP7mWIAArfols5Nqw5BGXIn6JKS9YkngbZyzJcQxX-D-i3MhVeAbrVDVRrnu6Y__3KNe?purpose=fullsize"
-                  alt="Artisan Craft"
-                  className="h-[440px] w-full object-cover transition-transform duration-700 group-hover:scale-105 sm:h-[520px]"
-                />
+                <div className="flex flex-wrap gap-4 pt-2">
+                  <Link
+                    to={slide.buttonLink}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#B9723D] px-6 py-3 text-sm font-bold text-white shadow-[0_18px_35px_rgba(185,114,61,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#a76331] focus:outline-none focus:ring-2 focus:ring-[#B9723D] focus:ring-offset-2"
+                  >
+                    {slide.buttonText}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
               </div>
-              
+
+              <div className={`flex justify-center lg:justify-end transition-all duration-700 delay-200 ${isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
+                <div className="group relative w-full max-w-[560px] overflow-hidden rounded-[28px] border border-[#E9D9C5] bg-white/40 p-3 shadow-[0_30px_70px_rgba(92,65,45,0.12)] transition-all duration-500 hover:shadow-[0_35px_80px_rgba(92,65,45,0.18)] dark:border-secondary-800 dark:bg-secondary-900/60">
+                  <div className="overflow-hidden rounded-[24px]">
+                    <img
+                      src={slide.image}
+                      alt={slide.heading}
+                      className="h-[220px] sm:h-[300px] lg:h-[420px] xl:h-[460px] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          );
+        })}
+
+        {/* Navigation Arrows */}
+        <button
+          onClick={handlePrevSlide}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[#DABF9B]/30 bg-white/60 text-[#7C5A3A] shadow-md backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-[#B9723D] hover:text-white dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-primary-300 dark:hover:bg-[#B9723D] dark:hover:text-white"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+
+        <button
+          onClick={handleNextSlide}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[#DABF9B]/30 bg-white/60 text-[#7C5A3A] shadow-md backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-[#B9723D] hover:text-white dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-primary-300 dark:hover:bg-[#B9723D] dark:hover:text-white"
+          aria-label="Next slide"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+
+        {/* Slide Indicators */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentSlide(index);
+              }}
+              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                index === currentSlide
+                  ? "w-6 bg-[#B9723D] shadow-sm"
+                  : "w-2 bg-secondary-300 hover:bg-secondary-400 dark:bg-secondary-700 dark:hover:bg-secondary-600"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+              aria-current={index === currentSlide ? "true" : "false"}
+            />
+          ))}
         </div>
       </section>
 
