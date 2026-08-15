@@ -1,30 +1,26 @@
 package com.handmadecrafts.backend.service;
 
-import com.resend.Resend;
-import com.resend.services.emails.model.CreateEmailOptions;
-import com.resend.services.emails.model.CreateEmailResponse;
-import com.resend.core.exception.ResendException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import jakarta.mail.internet.MimeMessage;
 
 @Service
 @Slf4j
 public class EmailService {
 
-    private final Resend resend;
+    private final JavaMailSender mailSender;
     private final String fromAddress;
-    private final String apiKey;
 
     public EmailService(
-            @Value("${RESEND_API_KEY}") String apiKey,
-            @Value("${app.mail.from:onboarding@resend.dev}") String fromAddress) {
-
-        this.apiKey = apiKey;
-        this.resend = new Resend(apiKey);
-
+            JavaMailSender mailSender,
+            @Value("${app.mail.from:}") String fromAddress) {
+        this.mailSender = mailSender;
         if (fromAddress == null || fromAddress.isBlank()) {
-            this.fromAddress = "onboarding@resend.dev";
+            this.fromAddress = "noreply@craftnest.com";
         } else {
             this.fromAddress = fromAddress;
         }
@@ -32,15 +28,9 @@ public class EmailService {
 
     public void sendOtpEmail(String toEmail, String otp, String subject) {
 
-        log.info("Preparing Resend OTP email: to={}, from={}",
+        log.info("Preparing OTP email: to={}, from={}",
                 maskEmail(toEmail),
                 maskEmail(fromAddress));
-
-        if (apiKey == null || apiKey.isBlank() || apiKey.equals("dummy")) {
-            String msg = "Resend API key is missing or not configured.";
-            log.error("Resend OTP send failed. Diagnostic: {}", msg);
-            throw new IllegalStateException("Failed to send OTP email: " + msg);
-        }
 
         try {
 
@@ -176,40 +166,20 @@ public class EmailService {
                     </html>
                     """.formatted(otp);
 
-            CreateEmailOptions params = CreateEmailOptions.builder()
-                    .from(fromAddress)
-                    .to(toEmail)
-                    .subject(subject)
-                    .html(htmlBody)
-                    .build();
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            CreateEmailResponse response = resend.emails().send(params);
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true);
+
+            mailSender.send(message);
 
             log.info(
-                    "OTP email successfully sent to {}, emailId={}",
-                    maskEmail(toEmail),
-                    response.getId()
+                    "OTP email successfully sent to {}",
+                    maskEmail(toEmail)
             );
-
-        } catch (ResendException e) {
-            String errorMsg = e.getMessage() != null ? e.getMessage() : "";
-            String diagnostic = "Resend API error";
-
-            if (errorMsg.contains("restriction") || errorMsg.contains("onboarding@resend.dev") || errorMsg.contains("not verified")) {
-                diagnostic = "Recipient restricted by Resend sandbox limits. Use your registered Resend-account email address for testing.";
-            } else if (errorMsg.contains("401") || errorMsg.contains("Unauthorized") || errorMsg.contains("invalid api key")) {
-                diagnostic = "Resend authentication failure. Check if the RESEND_API_KEY environment variable is valid.";
-            }
-
-            log.error("Resend OTP send failed. Diagnostic: {}. to={}, from={}, details={}",
-                    diagnostic,
-                    maskEmail(toEmail),
-                    maskEmail(fromAddress),
-                    errorMsg,
-                    e
-            );
-
-            throw new IllegalStateException("Failed to send OTP email: " + diagnostic, e);
 
         } catch (Exception e) {
             log.error(
