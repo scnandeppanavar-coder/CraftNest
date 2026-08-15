@@ -39,12 +39,18 @@ const Home = () => {
     return name.includes('jewel') || name.includes('accessory') || name.includes('bag');
   });
 
+  const homeDecorCategory = categories.find(c => {
+    const name = c.categoryName?.toLowerCase() || '';
+    return name.includes('decor') || name.includes('home') || name.includes('pottery') || name.includes('wood');
+  });
+
   const giftsCategory = categories.find(c => {
     const name = c.categoryName?.toLowerCase() || '';
-    return name.includes('gift') || name.includes('decor') || name.includes('home') || name.includes('card');
+    return name.includes('gift') || name.includes('card') || name.includes('thread');
   });
 
   const jewelleryLink = jewelleryCategory ? `/products?category=${jewelleryCategory.categoryId}` : '/products';
+  const homeDecorLink = homeDecorCategory ? `/products?category=${homeDecorCategory.categoryId}` : '/products';
   const giftsLink = giftsCategory ? `/products?category=${giftsCategory.categoryId}` : '/products';
 
   const slides = [
@@ -55,7 +61,7 @@ const Home = () => {
       subtext: "Discover unique handcrafted pieces created to bring warmth, beauty and personality to your everyday life.",
       buttonText: "Shop Collection",
       buttonLink: "/products",
-      image: "https://images.unsplash.com/photo-1606744824163-985d376605aa?auto=format&fit=crop&w=1000&q=80"
+      image: "https://images.unsplash.com/photo-1606744824163-985d376605aa?auto=format&fit=crop&w=1200&q=80"
     },
     {
       theme: "Jewellery & Accessories",
@@ -64,16 +70,34 @@ const Home = () => {
       subtext: "Explore beautiful handmade jewellery and accessories designed to make every moment special.",
       buttonText: "Explore Jewellery",
       buttonLink: jewelleryLink,
-      image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1000&q=80"
+      image: "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=1200&q=80"
     },
     {
-      theme: "Gifts & Home Decor",
-      tagline: "Meaningful Gifts & Beautiful Spaces",
-      heading: "Thoughtful Gifts, Beautiful Spaces",
-      subtext: "Find meaningful gifts and charming home decor for every occasion.",
+      theme: "Home Decor",
+      tagline: "Beautiful Living Spaces",
+      heading: "Beautiful Details for Your Home",
+      subtext: "Transform your living space with charming handcrafted decor designed to add character and warmth.",
+      buttonText: "Explore Home Decor",
+      buttonLink: homeDecorLink,
+      image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      theme: "Gifts & Cards",
+      tagline: "Thoughtful Gifting Made Easy",
+      heading: "Gifts Made to Be Remembered",
+      subtext: "Find meaningful handcrafted gifts and cards to celebrate the special moments and people in your life.",
       buttonText: "Explore Gifts",
       buttonLink: giftsLink,
-      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1000&q=80"
+      image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      theme: "Artisan Collection",
+      tagline: "Unique Masterpieces",
+      heading: "Unique Pieces, Crafted With Care",
+      subtext: "Explore our limited edition artisan collections made by master creators from around the world.",
+      buttonText: "Explore Collection",
+      buttonLink: "/products",
+      image: "https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=1200&q=80"
     }
   ];
 
