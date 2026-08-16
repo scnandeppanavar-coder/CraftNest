@@ -64,9 +64,9 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
     { key: 'products', path: '/admin/products', label: 'Products', icon: ShoppingBag },
     { key: 'categories', path: '/admin/categories', label: 'Categories', icon: FolderOpen },
     { key: 'orders', path: '/admin/orders', label: 'Orders', icon: ClipboardList },
-    { key: 'customers', path: '/admin/customers', label: 'Customers', icon: Users },
-    { key: 'admins', path: '/admin/register', label: 'Manage Admins', icon: ShieldAlert },
-    { key: 'inventory', path: '/admin/inventory', label: 'Inventory', icon: Warehouse },
+    { key: 'customers', path: '/admin/customers', label: 'Users', icon: Users },
+    { key: 'admins', path: '/admin/register', label: 'Register New Admin', icon: ShieldAlert },
+    { key: 'inventory', path: '/admin/inventory', label: 'Inventory/Stock', icon: Warehouse },
     { key: 'settings', path: '/admin/dashboard', label: 'Settings', icon: Settings },
     { key: 'logout', path: '/admin/login', label: 'Logout', icon: LogOut },
   ];
@@ -137,7 +137,10 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
 
   useEffect(() => {
     const tabFromPath = location.pathname.replace('/admin/', '') || 'dashboard';
-    const resolvedTab = tabFromPath === 'dashboard' ? 'overview' : tabFromPath;
+    let resolvedTab = tabFromPath === 'dashboard' ? 'overview' : tabFromPath;
+    if (resolvedTab === 'register') {
+      resolvedTab = 'admins';
+    }
     setActiveTab(resolvedTab);
     loadDashboardData();
   }, [location.pathname]);
@@ -590,6 +593,14 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
                           </td>
                           <td className="px-4 py-4">
                             <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/products/${product.productId}`)}
+                                className="rounded-xl border border-secondary-200 p-2 text-secondary-600 transition-all hover:border-[#D67A57] hover:text-[#B8633F] dark:border-secondary-700 dark:text-secondary-300 dark:hover:border-[#D67A57] dark:hover:text-[#F1C8AE]"
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditProduct(product)}

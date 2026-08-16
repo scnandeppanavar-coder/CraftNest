@@ -40,6 +40,7 @@ const { login } = useAuth();
         data.token,
         data.email,
         data.username,
+        data.fullName,
         data.role,
         data.userId
       );
