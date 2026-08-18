@@ -58,6 +58,21 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
   const [productSearch, setProductSearch] = useState('');
   const [productStatusFilter, setProductStatusFilter] = useState('all');
   const [productPage, setProductPage] = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderItems, setOrderItems] = useState([]);
+  const [orderDetailsOpen, setOrderDetailsOpen] = useState(false);
+  const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+  const [categorySearch, setCategorySearch] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [inventorySearch, setInventorySearch] = useState('');
+  const [inventoryStockFilter, setInventoryStockFilter] = useState('ALL');
+  const [adminRegisterOpen, setAdminRegisterOpen] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [adminSearch, setAdminSearch] = useState('');
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+  const [adminsError, setAdminsError] = useState('');
 
   const sidebarItems = [
     { key: 'overview', path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -65,7 +80,7 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
     { key: 'categories', path: '/admin/categories', label: 'Categories', icon: FolderOpen },
     { key: 'orders', path: '/admin/orders', label: 'Orders', icon: ClipboardList },
     { key: 'customers', path: '/admin/customers', label: 'Users', icon: Users },
-    { key: 'admins', path: '/admin/register', label: 'Register New Admin', icon: ShieldAlert },
+    { key: 'admins', path: '/admin/register', label: 'Admin Management', icon: ShieldAlert },
     { key: 'inventory', path: '/admin/inventory', label: 'Inventory/Stock', icon: Warehouse },
     { key: 'settings', path: '/admin/dashboard', label: 'Settings', icon: Settings },
     { key: 'logout', path: '/admin/login', label: 'Logout', icon: LogOut },
@@ -95,6 +110,8 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
 
   const loadDashboardData = async () => {
     setLoading(true);
+    setLoadingAdmins(true);
+    setAdminsError('');
     try {
       const [prodData, catData, adminOrderData, dashboardSummary, userData] = await Promise.all([
         productService.getAdminProducts(),
@@ -107,6 +124,7 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
       setProducts(prodData || []);
       setCategories(catData || []);
       setOrders(adminOrderData || []);
+      setAllUsers(userData || []);
       setUsers((userData || []).filter((user) => user.role === 'CUSTOMER') || []);
 
       if (dashboardSummary) {
@@ -130,8 +148,10 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
     } catch (e) {
       console.error(e);
       showToast('Failed to load catalog summaries', 'error');
+      setAdminsError('Unable to load administrators. Please try again.');
     } finally {
       setLoading(false);
+      setLoadingAdmins(false);
     }
   };
 
@@ -293,9 +313,95 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
     setProductPage(1);
   }, [productSearch, productStatusFilter]);
 
+  const handleOpenOrderDetails = async (order) => {
+    setSelectedOrder(order);
+    setOrderDetailsOpen(true);
+    setLoadingOrderDetails(true);
+    setOrderItems([]);
+    try {
+      const data = await orderService.getOrderDetails(order.orderId);
+      setOrderItems(data.items || []);
+    } catch (err) {
+      console.error('Failed to load order details:', err);
+      showToast('Failed to load order details', 'error');
+    } finally {
+      setLoadingOrderDetails(false);
+    }
+  };
+
   const LOW_STOCK_THRESHOLD = 5;
   const totalRevenue = orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
   const dashboardTotalOrders = orders.length || 0;
+
+  const filteredOrders = orders.filter((order) => {
+    const matchesStatus =
+      orderStatusFilter === 'ALL' ||
+      String(order.status).toUpperCase() === orderStatusFilter;
+
+    const searchTerm = orderSearch.toLowerCase().trim();
+    const orderIdStr = String(order.orderId || '');
+    const custName = String(order.customerName || '').toLowerCase();
+    const custEmail = String(order.customerEmail || '').toLowerCase();
+
+    const matchesSearch =
+      searchTerm === '' ||
+      orderIdStr.includes(searchTerm) ||
+      custName.includes(searchTerm) ||
+      custEmail.includes(searchTerm);
+
+    return matchesStatus && matchesSearch;
+  });
+
+  const filteredCategories = categories.filter((cat) =>
+    cat.categoryName.toLowerCase().includes(categorySearch.toLowerCase().trim())
+  );
+
+  const filteredUsers = users.filter((user) => {
+    const searchTerm = customerSearch.toLowerCase().trim();
+    return (
+      searchTerm === '' ||
+      user.username.toLowerCase().includes(searchTerm) ||
+      user.email.toLowerCase().includes(searchTerm)
+    );
+  });
+
+  const filteredInventoryProducts = (() => {
+    const baseProducts = location.state?.lowStockOnly
+      ? products.filter((product) => Number(product.stock || 0) < LOW_STOCK_THRESHOLD)
+      : products;
+
+    return baseProducts.filter((product) => {
+      // Stock Status Filter
+      const stock = Number(product.stock || 0);
+      const matchesStock =
+        inventoryStockFilter === 'ALL' ||
+        (inventoryStockFilter === 'LOW_STOCK' && stock < LOW_STOCK_THRESHOLD && stock > 0) ||
+        (inventoryStockFilter === 'OUT_OF_STOCK' && stock === 0) ||
+        (inventoryStockFilter === 'IN_STOCK' && stock >= LOW_STOCK_THRESHOLD);
+
+      // Search Filter
+      const searchTerm = inventorySearch.toLowerCase().trim();
+      const matchesSearch =
+        searchTerm === '' ||
+        product.name.toLowerCase().includes(searchTerm) ||
+        String(product.productId).includes(searchTerm);
+
+      return matchesStock && matchesSearch;
+    });
+  })();
+
+  const filteredAdminUsers = allUsers
+    .filter((user) => user.role && String(user.role).toUpperCase() === 'ADMIN')
+    .filter((admin) => {
+      const searchTerm = adminSearch.toLowerCase().trim();
+      return (
+        searchTerm === '' ||
+        (admin.username || '').toLowerCase().includes(searchTerm) ||
+        (admin.fullName || '').toLowerCase().includes(searchTerm) ||
+        (admin.email || '').toLowerCase().includes(searchTerm)
+      );
+    });
+
   const dashboardRegisteredCustomers = users.length || 0;
   const pendingOrders = orders.filter((order) => order.status && String(order.status).toLowerCase() === 'pending').length;
   const lowStockProducts = products.filter((product) => Number(product.stock || 0) < LOW_STOCK_THRESHOLD);
@@ -360,11 +466,22 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
         <aside className="w-full rounded-[30px] border border-[#F0E6D8] bg-white/80 p-4 shadow-[0_20px_50px_rgba(97,72,50,0.06)] backdrop-blur-sm dark:border-secondary-800 dark:bg-secondary-900/90 lg:w-[280px] lg:p-5">
           <div className="mb-8 flex items-center gap-3 border-b border-secondary-100 pb-5 dark:border-secondary-800">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F5E9E0] text-[#D67A57] dark:bg-[#2A1C17] dark:text-[#F2C2A6] overflow-hidden">
-              <img src="https://ik.imagekit.io/stringstackseema/handmade%20jewelry/logo.png" alt="CraftNest Logo" className="h-5 w-5 object-contain" />
+              <svg viewBox="0 0 100 100" className="h-6 w-6 text-[#D67A57] dark:text-[#F2C2A6] fill-none">
+                <circle cx="50" cy="50" r="38" className="stroke-current stroke-[3]" strokeDasharray="3 3" />
+                <path d="M26 32 C20 34 18 41 22 46 C24 43 27 42 26 32 Z" className="fill-current" />
+                <path d="M14 50 C9 54 8 62 13 65 C15 62 16 58 14 50 Z" className="fill-current" />
+                <path d="M22 68 C19 75 22 82 28 83 C28 80 26 76 22 68 Z" className="fill-current" />
+                <path d="M74 32 C80 34 82 41 78 46 C76 43 73 42 74 32 Z" className="fill-current" />
+                <path d="M86 50 C91 54 92 62 87 65 C85 62 84 58 86 50 Z" className="fill-current" />
+                <path d="M78 68 C81 75 78 82 72 83 C72 80 74 76 78 68 Z" className="fill-current" />
+                <path d="M34 52 L50 36 L66 52" className="stroke-current stroke-[4] stroke-linecap-round stroke-linejoin-round" />
+                <path d="M39 52 L39 67 C39 68 40 69 41 69 L59 69 C60 69 61 68 61 67 L61 52" className="stroke-current stroke-[4] stroke-linecap-round stroke-linejoin-round" />
+                <path d="M50 62 C50 62 46 58.5 44 58.5 C42 58.5 40.5 60 40.5 62 C40.5 64.5 45 66.5 50 68 C55 66.5 59.5 64.5 59.5 62 C59.5 60 58 58.5 56 58.5 C54 58.5 50 62 50 62 Z" className="fill-current" />
+              </svg>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-secondary-400">Craft</p>
-              <h2 className="font-outfit text-xl font-black">Nest Admin</h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D67A57] dark:text-[#F2C2A6]">CRAFTNEST</p>
+              <h2 className="font-outfit text-xl font-black text-secondary-900 dark:text-white leading-tight">Admin</h2>
             </div>
           </div>
 
@@ -421,29 +538,154 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
                   {activeTab === 'categories' && 'Categories'}
                   {activeTab === 'orders' && 'Orders'}
                   {activeTab === 'customers' && 'Customers'}
-                  {activeTab === 'inventory' && 'Inventory'}
+                  {activeTab === 'inventory' && 'Inventory / Stock'}
+                  {activeTab === 'admins' && 'Admin Management'}
                   {activeTab === 'settings' && 'Settings'}
                 </h1>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleOpenAddProduct}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#D67A57] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(214,122,87,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#c96e4c]"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Product
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenAddCategory}
-                  className="inline-flex items-center gap-2 rounded-full border border-secondary-200 bg-white px-4 py-2.5 text-sm font-semibold text-secondary-700 transition-all duration-300 hover:border-[#D67A57] hover:text-[#B8633F] dark:border-secondary-700 dark:bg-secondary-800 dark:text-secondary-200 dark:hover:border-[#D67A57] dark:hover:text-[#F3C8AF]"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Category
-                </button>
-              </div>
+              {/* Products page actions */}
+              {activeTab === 'products' && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+                  <div className="relative w-full sm:w-[220px]">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+                    <input
+                      type="text"
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      placeholder="Search products..."
+                      className="w-full rounded-2xl border border-secondary-200 bg-[#FAF7F2]/50 py-2.5 pl-11 pr-4 text-sm text-secondary-800 outline-none transition-all focus:border-[#D67A57] focus:bg-white dark:border-secondary-700 dark:bg-secondary-950 dark:text-white dark:focus:border-[#D67A57]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddProduct}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#D67A57] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(214,122,87,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#c96e4c] cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Product
+                  </button>
+                </div>
+              )}
+
+              {/* Categories page actions */}
+              {activeTab === 'categories' && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+                  <div className="relative w-full sm:w-[220px]">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+                    <input
+                      type="text"
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      placeholder="Search categories..."
+                      className="w-full rounded-2xl border border-secondary-200 bg-[#FAF7F2]/50 py-2.5 pl-11 pr-4 text-sm text-secondary-800 outline-none transition-all focus:border-[#D67A57] focus:bg-white dark:border-secondary-700 dark:bg-secondary-950 dark:text-white dark:focus:border-[#D67A57]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddCategory}
+                    className="inline-flex items-center gap-2 rounded-full border border-secondary-200 bg-white px-4 py-2.5 text-sm font-semibold text-secondary-700 transition-all duration-300 hover:border-[#D67A57] hover:text-[#B8633F] dark:border-secondary-700 dark:bg-secondary-800 dark:text-secondary-200 dark:hover:border-[#D67A57] dark:hover:text-[#F3C8AF] cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Category
+                  </button>
+                </div>
+              )}
+
+              {/* Orders page actions */}
+              {activeTab === 'orders' && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+                  <div className="relative w-full sm:w-[220px]">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+                    <input
+                      type="text"
+                      value={orderSearch}
+                      onChange={(e) => setOrderSearch(e.target.value)}
+                      placeholder="Search orders..."
+                      className="w-full rounded-2xl border border-secondary-200 bg-[#FAF7F2]/50 py-2.5 pl-11 pr-4 text-sm text-secondary-800 outline-none transition-all focus:border-[#D67A57] focus:bg-white dark:border-secondary-700 dark:bg-secondary-950 dark:text-white dark:focus:border-[#D67A57]"
+                    />
+                  </div>
+                  <select
+                    value={orderStatusFilter}
+                    onChange={(e) => setOrderStatusFilter(e.target.value)}
+                    className="rounded-2xl border border-secondary-200 bg-[#FAF7F2]/50 px-3 py-2.5 text-sm text-secondary-750 outline-none transition-all focus:border-[#D67A57] dark:border-secondary-700 dark:bg-secondary-950 dark:text-secondary-200 cursor-pointer"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="PROCESSING">Processing</option>
+                    <option value="SHIPPED">Shipped</option>
+                    <option value="DELIVERED">Delivered</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Customers page actions */}
+              {activeTab === 'customers' && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+                  <div className="relative w-full sm:w-[220px]">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+                    <input
+                      type="text"
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      placeholder="Search customers..."
+                      className="w-full rounded-2xl border border-secondary-200 bg-[#FAF7F2]/50 py-2.5 pl-11 pr-4 text-sm text-secondary-800 outline-none transition-all focus:border-[#D67A57] focus:bg-white dark:border-secondary-700 dark:bg-secondary-950 dark:text-white dark:focus:border-[#D67A57]"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Inventory page actions */}
+              {activeTab === 'inventory' && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+                  <div className="relative w-full sm:w-[220px]">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+                    <input
+                      type="text"
+                      value={inventorySearch}
+                      onChange={(e) => setInventorySearch(e.target.value)}
+                      placeholder="Search products..."
+                      className="w-full rounded-2xl border border-secondary-200 bg-[#FAF7F2]/50 py-2.5 pl-11 pr-4 text-sm text-secondary-800 outline-none transition-all focus:border-[#D67A57] focus:bg-white dark:border-secondary-700 dark:bg-secondary-950 dark:text-white dark:focus:border-[#D67A57]"
+                    />
+                  </div>
+                  <select
+                    value={inventoryStockFilter}
+                    onChange={(e) => setInventoryStockFilter(e.target.value)}
+                    className="rounded-2xl border border-secondary-200 bg-[#FAF7F2]/50 px-3 py-2.5 text-sm text-secondary-750 outline-none transition-all focus:border-[#D67A57] dark:border-secondary-700 dark:bg-secondary-950 dark:text-secondary-200 cursor-pointer"
+                  >
+                    <option value="ALL">All Stock</option>
+                    <option value="IN_STOCK">In Stock</option>
+                    <option value="LOW_STOCK">Low Stock</option>
+                    <option value="OUT_OF_STOCK">Out of Stock</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Admin Management page actions */}
+              {activeTab === 'admins' && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+                  <div className="relative w-full sm:w-[220px]">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+                    <input
+                      type="text"
+                      value={adminSearch}
+                      onChange={(e) => setAdminSearch(e.target.value)}
+                      placeholder="Search administrators..."
+                      className="w-full rounded-2xl border border-secondary-200 bg-[#FAF7F2]/50 py-2.5 pl-11 pr-4 text-sm text-secondary-800 outline-none transition-all focus:border-[#D67A57] focus:bg-white dark:border-secondary-700 dark:bg-secondary-950 dark:text-white dark:focus:border-[#D67A57]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAdminRegisterOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#D67A57] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(214,122,87,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#c96e4c] cursor-pointer shrink-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Admin
+                  </button>
+                </div>
+              )}
             </div>
           </header>
 
@@ -524,18 +766,7 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
 
           {activeTab === 'products' && (
             <div className="space-y-5 rounded-[30px] border border-secondary-200/70 bg-white p-5 shadow-[0_18px_35px_rgba(125,92,65,0.05)] dark:border-secondary-800 dark:bg-secondary-900 animate-fade-in-up">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div className="relative w-full max-w-md">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
-                  <input
-                    type="text"
-                    value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    placeholder="Search products..."
-                    className="w-full rounded-2xl border border-secondary-200 bg-secondary-50 py-3 pl-11 pr-4 text-sm text-secondary-800 outline-none transition-all focus:border-[#D67A57] focus:bg-white dark:border-secondary-700 dark:bg-secondary-800 dark:text-white dark:focus:border-[#D67A57]"
-                  />
-                </div>
-
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-end">
                 <div className="flex items-center gap-3">
                   <label className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary-400">Filter</label>
                   <select
@@ -656,41 +887,47 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
           {activeTab === 'categories' && (
             <div className="space-y-5 rounded-[30px] border border-secondary-200/70 bg-white p-5 shadow-[0_18px_35px_rgba(125,92,65,0.05)] dark:border-secondary-800 dark:bg-secondary-900 animate-fade-in-up">
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                {categories.map((cat, index) => {
-                  const productCount = products.filter((product) => product.category?.categoryId === cat.categoryId).length;
-                  return (
-                    <div key={cat.categoryId} className="group overflow-hidden rounded-[26px] border border-secondary-200 bg-white shadow-[0_20px_40px_rgba(125,92,65,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(125,92,65,0.09)] dark:border-secondary-800 dark:bg-secondary-900">
-                      <div className="h-52 overflow-hidden">
-                        <img src={catIcons[index % catIcons.length]} alt={cat.categoryName} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                      </div>
-                      <div className="space-y-3 p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <h3 className="font-outfit text-xl font-black text-secondary-900 dark:text-white">{cat.categoryName}</h3>
-                          <span className="rounded-full bg-[#F7E9DF] px-2 py-1 text-[10px] font-bold text-[#B8633F] dark:bg-[#2A1C17] dark:text-[#F3C8AF]">{productCount} items</span>
+                {filteredCategories.length > 0 ? (
+                  filteredCategories.map((cat, index) => {
+                    const productCount = products.filter((product) => product.category?.categoryId === cat.categoryId).length;
+                    return (
+                      <div key={cat.categoryId} className="group overflow-hidden rounded-[26px] border border-secondary-200 bg-white shadow-[0_20px_40px_rgba(125,92,65,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(125,92,65,0.09)] dark:border-secondary-800 dark:bg-secondary-900">
+                        <div className="h-52 overflow-hidden">
+                          <img src={catIcons[index % catIcons.length]} alt={cat.categoryName} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         </div>
-                        <p className="text-sm text-secondary-500 dark:text-secondary-400">Curated designs for artisan storytelling and elevated gifting.</p>
-                        <div className="flex justify-end gap-2 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditCategory(cat)}
-                            className="rounded-xl border border-secondary-200 p-2 text-secondary-600 transition-all hover:border-[#D67A57] hover:text-[#B8633F] dark:border-secondary-700 dark:text-secondary-300"
-                            title="Edit"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteCategory(cat.categoryId)}
-                            className="rounded-xl border border-rose-200 p-2 text-rose-500 transition-all hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-300 dark:hover:bg-rose-950/20"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                        <div className="space-y-3 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <h3 className="font-outfit text-xl font-black text-secondary-900 dark:text-white">{cat.categoryName}</h3>
+                            <span className="rounded-full bg-[#F7E9DF] px-2 py-1 text-[10px] font-bold text-[#B8633F] dark:bg-[#2A1C17] dark:text-[#F3C8AF]">{productCount} items</span>
+                          </div>
+                          <p className="text-sm text-secondary-500 dark:text-secondary-400">Curated designs for artisan storytelling and elevated gifting.</p>
+                          <div className="flex justify-end gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditCategory(cat)}
+                              className="rounded-xl border border-secondary-200 p-2 text-secondary-600 transition-all hover:border-[#D67A57] hover:text-[#B8633F] dark:border-secondary-700 dark:text-secondary-300"
+                              title="Edit"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategory(cat.categoryId)}
+                              className="rounded-xl border border-rose-200 p-2 text-rose-500 transition-all hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-300 dark:hover:bg-rose-950/20"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <div className="col-span-full py-12 text-center text-sm text-secondary-500 dark:text-secondary-400">
+                    No categories found matching your search.
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -712,7 +949,7 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-secondary-200 dark:divide-secondary-800">
-                      {orders.map((order) => {
+                      {filteredOrders.map((order) => {
                         const customer = {
                           username: order.customerName || 'Registered Customer',
                           email: order.customerEmail || 'unknown@example.com',
@@ -744,7 +981,8 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
                             <td className="px-4 py-4 text-right">
                               <button
                                 type="button"
-                                className="inline-flex items-center gap-2 rounded-full border border-secondary-200 bg-white px-3 py-2 text-xs font-bold text-secondary-700 transition-all hover:border-[#D67A57] hover:text-[#B8633F] dark:border-secondary-700 dark:bg-secondary-800 dark:text-secondary-200"
+                                onClick={() => handleOpenOrderDetails(order)}
+                                className="inline-flex items-center gap-2 rounded-full border border-secondary-200 bg-white px-3 py-2 text-xs font-bold text-secondary-700 transition-all hover:border-[#D67A57] hover:text-[#B8633F] dark:border-secondary-700 dark:bg-secondary-800 dark:text-secondary-200 cursor-pointer"
                               >
                                 View Details
                                 <Eye className="h-3.5 w-3.5" />
@@ -762,37 +1000,43 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
 
           {activeTab === 'customers' && (
             <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3 animate-fade-in-up">
-              {users.map((user) => {
-                const totalOrderCount = orders.filter((order) => order.userId === user.userId).length;
-                return (
-                  <div key={user.userId} className="rounded-[28px] border border-secondary-200/70 bg-white p-5 shadow-[0_18px_35px_rgba(125,92,65,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_45px_rgba(125,92,65,0.09)] dark:border-secondary-800 dark:bg-secondary-900">
-                    <div className="mb-4 flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F7E9DF] text-lg font-black text-[#B8633F] dark:bg-[#2A1C17] dark:text-[#F3C8AF]">
-                        {user.username.charAt(0).toUpperCase()}
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => {
+                  const totalOrderCount = orders.filter((order) => order.userId === user.userId).length;
+                  return (
+                    <div key={user.userId} className="rounded-[28px] border border-secondary-200/70 bg-white p-5 shadow-[0_18px_35px_rgba(125,92,65,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_45px_rgba(125,92,65,0.09)] dark:border-secondary-800 dark:bg-secondary-900">
+                      <div className="mb-4 flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F7E9DF] text-lg font-black text-[#B8633F] dark:bg-[#2A1C17] dark:text-[#F3C8AF]">
+                          {user.username.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="font-outfit text-xl font-black text-secondary-900 dark:text-white">{user.username}</h3>
+                          <p className="text-xs text-secondary-500 dark:text-secondary-400">ID: #{user.userId}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-outfit text-xl font-black text-secondary-900 dark:text-white">{user.username}</h3>
-                        <p className="text-xs text-secondary-500 dark:text-secondary-400">{user.role}</p>
-                      </div>
-                    </div>
 
-                    <div className="space-y-3 text-sm text-secondary-600 dark:text-secondary-300">
-                      <div className="flex items-center justify-between gap-4">
-                        <span>Email</span>
-                        <span className="font-medium text-secondary-800 dark:text-secondary-100">{user.email}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-4">
-                        <span>Total Orders</span>
-                        <span className="font-bold text-[#B8633F] dark:text-[#F1C8AE]">{totalOrderCount}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-4">
-                        <span>Joined</span>
-                        <span>{new Date(user.createdAt).toLocaleDateString()}</span>
+                      <div className="space-y-3 text-sm text-secondary-600 dark:text-secondary-300">
+                        <div className="flex items-start justify-between gap-4 min-w-0">
+                          <span className="shrink-0 text-secondary-400">Email</span>
+                          <span className="font-medium text-secondary-800 dark:text-secondary-100 text-right break-all [overflow-wrap:anywhere] [word-break:break-word] min-w-0">{user.email}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <span>Total Orders</span>
+                          <span className="font-bold text-[#B8633F] dark:text-[#F1C8AE]">{totalOrderCount}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <span>Joined</span>
+                          <span>{new Date(user.createdAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="col-span-full py-12 text-center text-sm text-secondary-500 dark:text-secondary-400">
+                  No customers found matching your search.
+                </div>
+              )}
             </div>
           )}
 
@@ -820,43 +1064,37 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-secondary-200 dark:divide-secondary-800">
-                      {(() => {
-                        const inventoryProducts = location.state?.lowStockOnly
-                          ? products.filter((product) => Number(product.stock || 0) < LOW_STOCK_THRESHOLD)
-                          : products;
-
-                        return inventoryProducts.length > 0 ? (
-                          inventoryProducts.map((product) => (
-                            <tr key={product.productId} className="transition-colors hover:bg-secondary-50/80 dark:hover:bg-secondary-800/60">
-                              <td className="px-4 py-4">
-                                <div className="flex items-center gap-3">
-                                  <img src={product.images?.[0]?.imageUrl || getCategoryImage(product.category?.categoryName, 0)} alt={product.name} className="h-12 w-12 rounded-2xl object-cover" />
-                                  <div>
-                                    <p className="font-bold text-secondary-900 dark:text-white">{product.name}</p>
-                                    <p className="text-xs text-secondary-500 dark:text-secondary-400">#{product.productId}</p>
-                                  </div>
+                      {filteredInventoryProducts.length > 0 ? (
+                        filteredInventoryProducts.map((product) => (
+                          <tr key={product.productId} className="transition-colors hover:bg-secondary-50/80 dark:hover:bg-secondary-800/60">
+                            <td className="px-4 py-4">
+                              <div className="flex items-center gap-3">
+                                <img src={product.images?.[0]?.imageUrl || getCategoryImage(product.category?.categoryName, 0)} alt={product.name} className="h-12 w-12 rounded-2xl object-cover" />
+                                <div>
+                                  <p className="font-bold text-secondary-900 dark:text-white">{product.name}</p>
+                                  <p className="text-xs text-secondary-450">#{product.productId}</p>
                                 </div>
-                              </td>
-                              <td className="px-4 py-4 text-secondary-600 dark:text-secondary-300">{product.category?.categoryName || 'General'}</td>
-                              <td className="px-4 py-4 font-bold text-[#B8633F] dark:text-[#F1C8AE]">{product.stock ?? 0}</td>
-                              <td className="px-4 py-4">
-                                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${Number(product.stock || 0) >= LOW_STOCK_THRESHOLD ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300' : 'bg-amber-500/10 text-amber-600 dark:text-amber-300'}`}>
-                                  {Number(product.stock || 0) >= LOW_STOCK_THRESHOLD ? 'In Stock' : 'Low Stock'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-4 text-secondary-600 dark:text-secondary-300">
-                                {product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : '—'}
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="5" className="px-4 py-12 text-center text-sm text-secondary-500 dark:text-secondary-400">
-                              {location.state?.lowStockOnly ? 'No low stock products found in the current catalog.' : 'No products available in inventory.'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 text-secondary-600 dark:text-secondary-300">{product.category?.categoryName || 'General'}</td>
+                            <td className="px-4 py-4 font-bold text-[#B8633F] dark:text-[#F1C8AE]">{product.stock ?? 0}</td>
+                            <td className="px-4 py-4">
+                              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${Number(product.stock || 0) >= LOW_STOCK_THRESHOLD ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300' : 'bg-amber-500/10 text-amber-600 dark:text-amber-300'}`}>
+                                {Number(product.stock || 0) >= LOW_STOCK_THRESHOLD ? 'In Stock' : 'Low Stock'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 text-secondary-600 dark:text-secondary-300">
+                              {product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : '—'}
                             </td>
                           </tr>
-                        );
-                      })()}
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5" className="px-4 py-12 text-center text-sm text-secondary-500 dark:text-secondary-400">
+                            No products matching search or filters available in inventory.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -865,8 +1103,68 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
           )}
 
           {activeTab === 'admins' && (
-            <div className="animate-fade-in-up">
-              <AdminRegister />
+            <div className="rounded-[30px] border border-secondary-200/70 bg-white p-5 shadow-[0_18px_35px_rgba(125,92,65,0.05)] dark:border-secondary-800 dark:bg-secondary-900 animate-fade-in-up">
+              <div className="overflow-hidden rounded-[24px] border border-secondary-200 dark:border-secondary-800">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="bg-secondary-50 text-secondary-500 dark:bg-secondary-800 dark:text-secondary-300">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Name</th>
+                        <th className="px-4 py-3 font-semibold">Email</th>
+                        <th className="px-4 py-3 font-semibold">Role</th>
+                        <th className="px-4 py-3 font-semibold">Joined Date</th>
+                        <th className="px-4 py-3 font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-secondary-200 dark:divide-secondary-800">
+                      {loadingAdmins ? (
+                        <tr>
+                          <td colSpan="5" className="px-4 py-12 text-center text-sm text-secondary-500 dark:text-secondary-400">
+                            <div className="flex flex-col items-center justify-center gap-3">
+                              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#D67A57] border-t-transparent" />
+                              <span>Loading administrators...</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : adminsError ? (
+                        <tr>
+                          <td colSpan="5" className="px-4 py-12 text-center text-sm text-rose-500 font-semibold">
+                            {adminsError}
+                          </td>
+                        </tr>
+                      ) : filteredAdminUsers.length > 0 ? (
+                        filteredAdminUsers.map((admin) => (
+                          <tr key={admin.userId} className="transition-colors hover:bg-secondary-50/80 dark:hover:bg-secondary-800/60">
+                            <td className="px-4 py-4 font-bold text-secondary-900 dark:text-white">
+                              {admin.fullName || admin.username}
+                            </td>
+                            <td className="px-4 py-4 text-secondary-600 dark:text-secondary-300">{admin.email}</td>
+                            <td className="px-4 py-4">
+                              <span className="inline-flex rounded-full bg-[#F7E9DF] px-2.5 py-1 text-xs font-bold text-[#B8633F] dark:bg-[#2A1C17] dark:text-[#F3C8AF]">
+                                {admin.role}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 text-secondary-600 dark:text-secondary-300">
+                              {admin.createdAt ? new Date(admin.createdAt).toLocaleDateString() : '—'}
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="inline-flex rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-300">
+                                Active
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5" className="px-4 py-12 text-center text-sm text-secondary-500 dark:text-secondary-400">
+                            No administrators found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1118,6 +1416,168 @@ const AdminDashboard = ({ initialTab = 'overview' }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Order Details Modal */}
+      {orderDetailsOpen && selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary-950/40 p-4 backdrop-blur-sm animate-fade-in-up">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[30px] border border-secondary-200 bg-white p-6 shadow-2xl dark:border-secondary-800 dark:bg-secondary-900 sm:p-8">
+
+            <div className="flex items-center justify-between border-b border-secondary-100 pb-4 dark:border-secondary-800">
+              <div>
+                <h3 className="font-outfit text-2xl font-black text-secondary-900 dark:text-white">
+                  Order Details
+                </h3>
+                <p className="text-xs text-secondary-400 mt-1">
+                  Order #{selectedOrder.orderId} • Placed on {new Date(selectedOrder.orderDate).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOrderDetailsOpen(false)}
+                className="rounded-full bg-secondary-100 p-2 text-secondary-500 hover:bg-secondary-200 dark:bg-secondary-800 dark:text-secondary-400 dark:hover:bg-secondary-700 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-6">
+
+              {/* Customer Info */}
+              <div className="rounded-[22px] border border-secondary-200/80 bg-secondary-50/50 p-4 dark:border-secondary-800 dark:bg-secondary-950/50">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#B56A42] dark:text-[#F1C8AE] mb-3">Customer Information</h4>
+                <div className="grid gap-3 text-sm sm:grid-cols-2">
+                  <div>
+                    <span className="text-secondary-400 dark:text-secondary-500 block text-xs font-semibold">Name</span>
+                    <span className="font-bold text-secondary-900 dark:text-white">{selectedOrder.customerName || 'Registered Customer'}</span>
+                  </div>
+                  <div>
+                    <span className="text-secondary-400 dark:text-secondary-500 block text-xs font-semibold">Email</span>
+                    <span className="font-medium text-secondary-800 dark:text-secondary-100 break-all select-all [overflow-wrap:anywhere] [word-break:break-word]">{selectedOrder.customerEmail || 'unknown@example.com'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status and Summary */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-[22px] border border-secondary-200/80 p-4 dark:border-secondary-800">
+                  <span className="text-secondary-400 dark:text-secondary-500 block text-xs font-semibold">Order Status</span>
+                  <span className={`inline-flex mt-2 rounded-full px-3 py-1 text-xs font-bold ${
+                    selectedOrder.status === 'DELIVERED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300' :
+                    selectedOrder.status === 'PENDING' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-300' :
+                    selectedOrder.status === 'SHIPPED' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-300' :
+                    selectedOrder.status === 'PROCESSING' ? 'bg-violet-500/10 text-violet-600 dark:text-violet-300' :
+                    'bg-rose-500/10 text-rose-600 dark:text-rose-300'
+                  }`}>
+                    {selectedOrder.status}
+                  </span>
+                </div>
+                <div className="rounded-[22px] border border-secondary-200/80 p-4 dark:border-secondary-800">
+                  <span className="text-secondary-400 dark:text-secondary-500 block text-xs font-semibold">Grand Total</span>
+                  <span className="block mt-1 font-outfit text-xl font-black text-[#B8633F] dark:text-[#F1C8AE]">
+                    {currencyFormatter.format(selectedOrder.totalAmount)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Products/Items list */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#B56A42] dark:text-[#F1C8AE] mb-3">Items in Order</h4>
+                {loadingOrderDetails ? (
+                  <div className="flex flex-col items-center justify-center py-8 gap-3">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#D67A57] border-t-transparent" />
+                    <span className="text-xs text-secondary-500">Loading order items...</span>
+                  </div>
+                ) : orderItems.length === 0 ? (
+                  <p className="text-sm text-secondary-500 py-4 text-center">No products found in this order.</p>
+                ) : (
+                  <div className="divide-y divide-secondary-100 border-t border-b border-secondary-100 dark:divide-secondary-800 dark:border-secondary-800">
+                    {orderItems.map((item) => (
+                      <div key={item.productId} className="flex items-center gap-4 py-3">
+                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-secondary-50 dark:bg-secondary-950">
+                          <img
+                            src={item.imageUrl || "/no-image.png"}
+                            alt={item.productName}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              e.target.src = "/no-image.png";
+                            }}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h5 className="truncate text-sm font-bold text-secondary-900 dark:text-white">
+                            {item.productName}
+                          </h5>
+                          <p className="text-xs text-secondary-500 mt-0.5">
+                            ₹{item.price} × {item.quantity}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-secondary-900 dark:text-white">
+                            ₹{item.price * item.quantity}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Payment & Shipping Summary */}
+              <div className="rounded-[22px] border border-secondary-200/80 bg-secondary-50/50 p-4 dark:border-secondary-800 dark:bg-secondary-950/50 space-y-2.5 text-xs text-secondary-600 dark:text-secondary-400">
+                <div className="flex justify-between">
+                  <span>Payment Method</span>
+                  <span className="font-semibold text-secondary-900 dark:text-white">Online Payment</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Payment Status</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">SUCCESS</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Shipping Cost</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">FREE</span>
+                </div>
+              </div>
+
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setOrderDetailsOpen(false)}
+                className="rounded-full bg-[#D67A57] px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-[#c96e4c]"
+              >
+                Close Details
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {adminRegisterOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary-950/40 p-4 backdrop-blur-sm">
+          <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[30px] border border-secondary-200 bg-white p-6 shadow-2xl dark:border-secondary-800 dark:bg-secondary-900 sm:p-8">
+            <button
+              type="button"
+              onClick={() => setAdminRegisterOpen(false)}
+              className="absolute right-4 top-4 rounded-xl border border-secondary-200 p-2 text-secondary-500 hover:bg-secondary-50 dark:border-secondary-800 dark:text-secondary-400 dark:hover:bg-secondary-850 cursor-pointer"
+            >
+              <Plus className="h-5 w-5 rotate-45" />
+            </button>
+            <div className="mt-2">
+              <AdminRegister onSuccess={() => {
+                loadDashboardData();
+              }} />
+            </div>
           </div>
         </div>
       )}

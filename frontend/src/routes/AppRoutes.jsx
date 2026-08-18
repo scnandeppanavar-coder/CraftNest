@@ -27,6 +27,7 @@ import Profile from '../pages/Profile';
 import AdminDashboard from '../pages/AdminDashboard';
 import NotFound from '../pages/NotFound';
 import LoginSelection from "../pages/LoginSelection";
+import Invoice from '../pages/Invoice';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -158,6 +159,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute customerOnly={true}>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="invoice/:orderId"
+          element={
+            <ProtectedRoute>
+              <Invoice />
             </ProtectedRoute>
           }
         />

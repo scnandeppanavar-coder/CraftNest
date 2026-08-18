@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Mail, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Mail, ShieldCheck } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useToast } from '../context/ToastContext';
+import Logo from '../components/Logo';
 
 const VerifyRegistrationOtp = () => {
   const navigate = useNavigate();
@@ -45,81 +46,110 @@ const VerifyRegistrationOtp = () => {
   };
 
   return (
-    <div className="min-h-[75vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-secondary-900 border border-secondary-200/60 dark:border-secondary-800 p-8 sm:p-10 rounded-3xl shadow-xl transition-colors">
-        <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 dark:bg-primary-950/40 text-primary-600 mb-4">
-            <CheckCircle2 className="h-6 w-6" />
-          </div>
-          <h2 className="font-outfit font-extrabold text-2xl text-secondary-900 dark:text-white tracking-tight">
-            Verify Your Email
-          </h2>
-          <p className="mt-2 text-xs text-secondary-500 dark:text-secondary-400">
-            An OTP has been sent to your email. Please enter it below to complete registration.
-          </p>
+    <div className="w-full min-h-[calc(100vh-80px)] flex items-center justify-center bg-[#F7F1E8] dark:bg-[#1C1917] py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-8 lg:gap-10">
+        {/* Left Column - Background Image */}
+        <div className="w-full lg:w-[54%] h-[300px] sm:h-[400px] lg:h-[650px] rounded-xl overflow-hidden shadow-sm relative shrink-0">
+          <img
+            src="/assets/auth_bg.jpg"
+            alt="CraftNest Background"
+            className="w-full h-full object-cover"
+            style={{ objectPosition: 'center' }}
+          />
+          <div className="absolute inset-0 bg-[#3B2A22]/5 dark:bg-black/30 pointer-events-none" />
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleVerify}>
-          <div className="space-y-4">
-            {/* Email (readonly if passed from registration) */}
-            <div>
-              <label htmlFor="email" className="text-xs font-semibold text-secondary-500 dark:text-secondary-400 block mb-1.5 ml-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  placeholder="name@domain.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  readOnly={!!location.state?.email}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-2xl text-sm focus:outline-none dark:text-white transition-all ${
-                    location.state?.email
-                      ? 'bg-secondary-100 dark:bg-secondary-800/20 border-secondary-200 dark:border-secondary-800 text-secondary-500'
-                      : 'bg-secondary-50 dark:bg-secondary-800/50 border-secondary-200 dark:border-secondary-750 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20'
-                  }`}
-                />
-                <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-secondary-400" />
-              </div>
+        {/* Right Column - Authentication Panel */}
+        <div className="w-full lg:w-[42%] min-h-[500px] lg:h-[650px] bg-white dark:bg-secondary-900 rounded-xl shadow-sm flex items-center justify-center p-8 sm:p-12 lg:p-14 transition-all duration-300">
+          <div className="w-full max-w-[380px] py-4 space-y-6 lg:space-y-8 flex flex-col justify-center h-full">
+
+            {/* Branding */}
+            <div className="flex flex-col items-start">
+              <Logo showTagline={false} iconSize="w-9 h-9" />
+              <span className="text-[10px] font-bold tracking-[0.25em] text-[#77706A] uppercase leading-none mt-3.5">
+                HANDMADE • UNIQUE • FROM THE HEART
+              </span>
+              <div className="w-12 h-[2px] bg-[#D97752] mt-4" />
             </div>
 
-            {/* OTP Code */}
+            {/* Heading */}
             <div>
-              <label htmlFor="otp" className="text-xs font-semibold text-secondary-500 dark:text-secondary-400 block mb-1.5 ml-1">
-                Verification OTP (6 Digits)
-              </label>
-              <div className="relative">
-                <input
-                  id="otp"
-                  type="text"
-                  required
-                  maxLength={6}
-                  placeholder="123456"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} // only digits
-                  className="w-full pl-10 pr-4 py-3 bg-secondary-50 dark:bg-secondary-800/50 border border-secondary-200 dark:border-secondary-750 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-2xl text-center text-lg font-bold tracking-widest focus:outline-none dark:text-white transition-all"
-                />
-                <ShieldAlert className="absolute left-3.5 top-3.5 w-4 h-4 text-secondary-400" />
+              <h2 className="font-outfit font-black text-3xl text-[#3B2A22] dark:text-white tracking-tight">
+                Verify your email
+              </h2>
+              <p className="mt-2 text-sm text-[#77706A] dark:text-secondary-400">
+                Enter the 6-digit code sent to your email.
+              </p>
+            </div>
+
+            {/* Form */}
+            <form className="space-y-6" onSubmit={handleVerify}>
+              <div className="space-y-4">
+                {/* Email (readonly if passed from registration) */}
+                <div className="space-y-1.5">
+                  <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-[#3B2A22] dark:text-secondary-300 block">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="email"
+                      type="email"
+                      required
+                      placeholder="name@domain.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      readOnly={!!location.state?.email}
+                      className={`w-full pl-4 pr-4 h-[52px] border text-sm focus:outline-none dark:text-white transition-all rounded-md ${
+                        location.state?.email
+                          ? 'bg-secondary-150 dark:bg-secondary-800/20 border-secondary-200 dark:border-secondary-800 text-secondary-500 cursor-not-allowed'
+                          : 'bg-white border-secondary-200 dark:border-secondary-750 focus:border-[#D97752] focus:ring-2 focus:ring-[#D97752]/10 text-secondary-900'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* OTP Code */}
+                <div className="space-y-1.5">
+                  <label htmlFor="otp" className="text-xs font-bold uppercase tracking-wider text-[#3B2A22] dark:text-secondary-300 block">
+                    Verification OTP (6 Digits)
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="otp"
+                      type="text"
+                      required
+                      maxLength={6}
+                      placeholder="123456"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} // only digits
+                      className="w-full pl-4 pr-4 h-[52px] bg-white dark:bg-secondary-950 border border-secondary-200 dark:border-secondary-750 focus:border-[#D97752] focus:ring-2 focus:ring-[#D97752]/10 rounded-md text-center text-lg font-bold tracking-widest focus:outline-none text-secondary-900 dark:text-white transition-all placeholder-[#77706A]/40"
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-[52px] text-sm font-bold tracking-wider text-white bg-[#D97752] hover:bg-[#c5623e] hover:-translate-y-[1px] active:translate-y-0 active:shadow-sm rounded-md transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer mt-2"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'VERIFY & ACTIVATE →'
+                )}
+              </button>
+            </form>
+
+            {/* Footer Back link */}
+            <div className="text-sm text-secondary-500 pt-1">
+              <Link to="/login" className="font-bold text-[#D97752] hover:text-[#c5623e] transition-colors">
+                Back to Sign In
+              </Link>
             </div>
           </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 px-4 text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 rounded-2xl shadow-lg shadow-primary-500/10 hover:shadow-primary-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                'Verify & Activate'
-              )}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );

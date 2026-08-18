@@ -8,7 +8,26 @@ import { useAuth } from '../context/AuthContext';
 const Layout = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
-  const showChatbot = !location.pathname.startsWith('/admin') && !isAdmin;
+
+  const authPaths = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/verify-registration-otp',
+    '/verify-forgot-password-otp',
+    '/reset-password'
+  ];
+  const isAuthPage = authPaths.includes(location.pathname);
+  const showChatbot = !location.pathname.startsWith('/admin') && !isAdmin && !isAuthPage;
+
+  if (isAuthPage) {
+    return (
+      <div className="min-h-screen w-full bg-[#F7F1E8] dark:bg-[#1C1917] transition-colors duration-300">
+        <Navbar />
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-secondary-50 dark:bg-secondary-950 transition-colors duration-300">

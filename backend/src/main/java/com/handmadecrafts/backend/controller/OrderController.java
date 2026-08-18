@@ -62,8 +62,36 @@ public class OrderController {
     }
 
     @GetMapping("/details/{orderId}")
-    public ResponseEntity<OrderDetailsDto> getOrderDetails(@PathVariable Integer orderId) {
-        return ResponseEntity.ok(orderService.getOrderDetails(orderId));
+    public ResponseEntity<OrderDetailsDto> getOrderDetails(
+            @PathVariable Integer orderId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.handmadecrafts.backend.security.CustomUserDetails userDetails) {
+
+        OrderDetailsDto details = orderService.getOrderDetails(orderId);
+
+        if (userDetails != null && userDetails.getUser() != null) {
+            String role = userDetails.getUser().getRole().name();
+            Integer authenticatedUserId = userDetails.getUser().getUserId();
+            Integer orderOwnerId = details.getUserId();
+
+            if (!"ADMIN".equals(role)) {
+                boolean allowed = authenticatedUserId != null && authenticatedUserId.equals(orderOwnerId);
+                System.out.println(String.format("Invoice authorization: authenticatedUserId=%s, orderOwnerId=%s, role=%s, result=%s",
+                        authenticatedUserId, orderOwnerId, role, allowed ? "ALLOWED" : "DENIED"));
+                if (!allowed) {
+                    throw new org.springframework.security.access.AccessDeniedException(
+                            "Access Denied: You do not own this order.");
+                }
+            } else {
+                System.out.println(String.format("Invoice authorization: authenticatedUserId=%s, orderOwnerId=%s, role=%s, result=ALLOWED",
+                        authenticatedUserId, orderOwnerId, role));
+            }
+        } else {
+            System.out.println("Invoice authorization: unauthenticated request, result=DENIED");
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Access Denied: Unauthenticated request.");
+        }
+
+        return ResponseEntity.ok(details);
     }
 
     private OrderDto toOrderDto(Order order) {

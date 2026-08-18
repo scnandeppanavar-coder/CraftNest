@@ -27,7 +27,7 @@ const Home = () => {
   const [emailInput, setEmailInput] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
 
-  // Carousel State
+  // Carousel States
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
@@ -36,12 +36,17 @@ const Home = () => {
   // Dynamic category mapping based on categories loaded from database
   const jewelleryCategory = categories.find(c => {
     const name = c.categoryName?.toLowerCase() || '';
-    return name.includes('jewel') || name.includes('accessory') || name.includes('bag');
+    return name.includes('jewel') || name.includes('jewelry');
   });
 
   const homeDecorCategory = categories.find(c => {
     const name = c.categoryName?.toLowerCase() || '';
     return name.includes('decor') || name.includes('home') || name.includes('pottery') || name.includes('wood');
+  });
+
+  const bagsCategory = categories.find(c => {
+    const name = c.categoryName?.toLowerCase() || '';
+    return name.includes('bag') || name.includes('accessory') || name.includes('accessories');
   });
 
   const giftsCategory = categories.find(c => {
@@ -51,61 +56,62 @@ const Home = () => {
 
   const jewelleryLink = jewelleryCategory ? `/products?category=${jewelleryCategory.categoryId}` : '/products';
   const homeDecorLink = homeDecorCategory ? `/products?category=${homeDecorCategory.categoryId}` : '/products';
+  const bagsLink = bagsCategory ? `/products?category=${bagsCategory.categoryId}` : '/products';
   const giftsLink = giftsCategory ? `/products?category=${giftsCategory.categoryId}` : '/products';
 
   const slides = [
     {
-      theme: "Handmade Craft Collection",
-      tagline: "100% Handmade & Sustainable",
-      heading: "Handmade Treasures, Made With Love",
-      subtext: "Discover unique handcrafted pieces created to bring warmth, beauty and personality to your everyday life.",
+      badge: "Handmade Collection",
+      heading: "Handmade Treasures, Made with Love",
+      description: "Discover unique handcrafted creations made to bring warmth, beauty and personality to your everyday life.",
       buttonText: "Shop Collection",
       buttonLink: "/products",
-      image: "https://images.unsplash.com/photo-1606744824163-985d376605aa?auto=format&fit=crop&w=1200&q=80"
+      image: "/assets/hero_crafts.jpg",
+      fallbackImage: "https://images.unsplash.com/photo-1606744824163-985d376605aa?auto=format&fit=crop&w=1200&q=80"
     },
     {
-      theme: "Jewellery & Accessories",
-      tagline: "Elegant & Sparkling Accessories",
+      badge: "Jewellery & Accessories",
       heading: "Add a Little Sparkle",
-      subtext: "Explore beautiful handmade jewellery and accessories designed to make every moment special.",
+      description: "Discover beautiful handmade jewellery and accessories designed to make every moment special.",
       buttonText: "Explore Jewellery",
       buttonLink: jewelleryLink,
-      image: "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=1200&q=80"
+      image: "/assets/hero_jewellery.jpg",
+      fallbackImage: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=80"
     },
     {
-      theme: "Home Decor",
-      tagline: "Beautiful Living Spaces",
-      heading: "Beautiful Details for Your Home",
-      subtext: "Transform your living space with charming handcrafted decor designed to add character and warmth.",
+      badge: "Home Decor",
+      heading: "Make Your Space Beautiful",
+      description: "Bring warmth and character to your home with handcrafted decor made with care.",
       buttonText: "Explore Home Decor",
       buttonLink: homeDecorLink,
-      image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=1200&q=80"
+      image: "/assets/hero_decor.jpg",
+      fallbackImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80"
     },
     {
-      theme: "Gifts & Cards",
-      tagline: "Thoughtful Gifting Made Easy",
-      heading: "Gifts Made to Be Remembered",
-      subtext: "Find meaningful handcrafted gifts and cards to celebrate the special moments and people in your life.",
+      badge: "Bags & Accessories",
+      heading: "Style Made by Hand",
+      description: "Explore unique handmade bags and accessories created for everyday style.",
+      buttonText: "Explore Accessories",
+      buttonLink: bagsLink,
+      image: "/assets/hero_bags.jpg",
+      fallbackImage: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1200&q=80"
+    },
+    {
+      badge: "Gifts & Cards",
+      heading: "Give Something Meaningful",
+      description: "Find thoughtful handmade gifts for birthdays, celebrations and every special occasion.",
       buttonText: "Explore Gifts",
       buttonLink: giftsLink,
-      image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1200&q=80"
-    },
-    {
-      theme: "Artisan Collection",
-      tagline: "Unique Masterpieces",
-      heading: "Unique Pieces, Crafted With Care",
-      subtext: "Explore our limited edition artisan collections made by master creators from around the world.",
-      buttonText: "Explore Collection",
-      buttonLink: "/products",
-      image: "https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=1200&q=80"
+      image: "/assets/hero_gifts.jpg",
+      fallbackImage: "https://images.unsplash.com/photo-1512909002447-2a562abe3e3b?auto=format&fit=crop&w=1200&q=80"
     }
   ];
 
-  // Handle Auto-slide rotation (5 seconds)
+  // Auto slide rotation (5 seconds)
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide((prev) => (prev + 1) % 5);
     }, 5000);
     return () => clearInterval(interval);
   }, [currentSlide, isPaused]);
@@ -128,28 +134,27 @@ const Home = () => {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
     if (isLeftSwipe) {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide((prev) => (prev + 1) % 5);
     } else if (isRightSwipe) {
-      setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+      setCurrentSlide((prev) => (prev - 1 + 5) % 5);
     }
   };
 
   const handlePrevSlide = (e) => {
     e.stopPropagation();
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    setCurrentSlide((prev) => (prev - 1 + 5) % 5);
   };
 
   const handleNextSlide = (e) => {
     e.stopPropagation();
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+    setCurrentSlide((prev) => (prev + 1) % 5);
   };
 
-  // Keyboard navigation support
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowLeft') {
-      setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+      setCurrentSlide((prev) => (prev - 1 + 5) % 5);
     } else if (e.key === 'ArrowRight') {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide((prev) => (prev + 1) % 5);
     }
   };
 
@@ -235,33 +240,42 @@ const Home = () => {
           return (
             <div
               key={index}
-              className={`absolute inset-0 w-full h-full grid items-center gap-10 px-6 py-12 sm:px-10 md:px-12 lg:grid-cols-2 lg:px-16 lg:py-16 transition-all duration-700 ease-in-out ${
+              className={`absolute inset-0 w-full h-full grid items-center gap-8 lg:gap-12 px-6 py-12 sm:px-12 lg:grid-cols-12 lg:px-16 lg:py-16 transition-all duration-700 ease-in-out ${
                 isActive
                   ? "opacity-100 pointer-events-auto z-10 scale-100"
                   : "opacity-0 pointer-events-none z-0 scale-[0.98]"
               }`}
               aria-hidden={!isActive}
             >
-              <div className={`space-y-7 transition-all duration-700 delay-100 ${isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#E8D9C4] bg-white/80 px-4 py-2 text-sm font-bold text-[#7C5A3A] shadow-sm backdrop-blur-sm transition-transform duration-300 hover:scale-[1.02] dark:border-secondary-700 dark:bg-secondary-900/80 dark:text-primary-300">
-                  <Sparkles className="h-4 w-4" />
-                  {slide.tagline}
+              {/* Left Side: Typography & Action */}
+              <div className={`lg:col-span-7 space-y-6 sm:space-y-8 text-left transition-all duration-700 delay-100 ${isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#E8D9C4] bg-white/80 px-4 py-2 text-xs font-bold text-[#7C5A3A] shadow-sm backdrop-blur-sm dark:border-secondary-700 dark:bg-secondary-900/80 dark:text-primary-300">
+                  <Sparkles className="h-3.5 w-3.5 text-[#B9723D]" />
+                  {slide.badge}
                 </span>
 
                 <div className="space-y-4">
-                  <h1 className="font-outfit text-4xl font-black leading-[1.05] tracking-[-0.04em] text-[#2C241E] dark:text-white sm:text-5xl lg:text-6xl">
-                    {slide.heading}
+                  <h1 className="font-outfit text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight text-[#2C241E] dark:text-white">
+                    {slide.heading.split(', ')[0]}
+                    {slide.heading.includes(', ') && (
+                      <>
+                        , <br className="hidden sm:inline" />
+                        <span className="text-[#B9723D] dark:text-[#E89E6C]">
+                          {slide.heading.split(', ')[1]}
+                        </span>
+                      </>
+                    )}
                   </h1>
 
-                  <p className="max-w-xl text-base leading-8 text-[#5F584F] dark:text-secondary-300">
-                    {slide.subtext}
+                  <p className="max-w-xl text-base sm:text-lg leading-relaxed text-[#5F584F] dark:text-secondary-300">
+                    {slide.description}
                   </p>
                 </div>
 
                 <div className="flex flex-wrap gap-4 pt-2">
                   <Link
                     to={slide.buttonLink}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#B9723D] px-6 py-3 text-sm font-bold text-white shadow-[0_18px_35px_rgba(185,114,61,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#a76331] focus:outline-none focus:ring-2 focus:ring-[#B9723D] focus:ring-offset-2"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#B9723D] px-7 py-3.5 text-sm font-bold text-white shadow-[0_18px_35px_rgba(185,114,61,0.3)] hover:bg-[#a76331] active:scale-95 transition-all duration-300 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[#B9723D] focus:ring-offset-2"
                   >
                     {slide.buttonText}
                     <ArrowRight className="h-4 w-4" />
@@ -269,13 +283,17 @@ const Home = () => {
                 </div>
               </div>
 
-              <div className={`flex justify-center lg:justify-end transition-all duration-700 delay-200 ${isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
-                <div className="group relative w-full max-w-[560px] overflow-hidden rounded-[28px] border border-[#E9D9C5] bg-white/40 p-3 shadow-[0_30px_70px_rgba(92,65,45,0.12)] transition-all duration-500 hover:shadow-[0_35px_80px_rgba(92,65,45,0.18)] dark:border-secondary-800 dark:bg-secondary-900/60">
-                  <div className="overflow-hidden rounded-[24px]">
+              {/* Right Side: Visual Image */}
+              <div className={`lg:col-span-5 flex justify-center lg:justify-end transition-all duration-700 delay-200 ${isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}>
+                <div className="group relative w-full max-w-[460px] overflow-hidden rounded-[28px] border border-[#E9D9C5] bg-white/40 p-3 shadow-[0_30px_70px_rgba(92,65,45,0.12)] transition-all duration-500 hover:shadow-[0_35px_80px_rgba(92,65,45,0.18)] dark:border-secondary-800 dark:bg-secondary-900/60">
+                  <div className="overflow-hidden rounded-[22px] aspect-[4/3] sm:aspect-square">
                     <img
                       src={slide.image}
                       alt={slide.heading}
-                      className="h-[220px] sm:h-[300px] lg:h-[420px] xl:h-[460px] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      onError={(e) => {
+                        e.target.src = slide.fallbackImage;
+                      }}
                     />
                   </div>
                 </div>
@@ -287,7 +305,7 @@ const Home = () => {
         {/* Navigation Arrows */}
         <button
           onClick={handlePrevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[#DABF9B]/30 bg-white/60 text-[#7C5A3A] shadow-md backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-[#B9723D] hover:text-white dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-primary-300 dark:hover:bg-[#B9723D] dark:hover:text-white"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[#DABF9B]/30 bg-white/60 text-[#7C5A3A] shadow-md backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-[#B9723D] hover:text-white dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-primary-300 dark:hover:bg-[#B9723D] dark:hover:text-white cursor-pointer"
           aria-label="Previous slide"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -295,13 +313,13 @@ const Home = () => {
 
         <button
           onClick={handleNextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[#DABF9B]/30 bg-white/60 text-[#7C5A3A] shadow-md backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-[#B9723D] hover:text-white dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-primary-300 dark:hover:bg-[#B9723D] dark:hover:text-white"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[#DABF9B]/30 bg-white/60 text-[#7C5A3A] shadow-md backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-[#B9723D] hover:text-white dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-primary-300 dark:hover:bg-[#B9723D] dark:hover:text-white cursor-pointer"
           aria-label="Next slide"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
 
-        {/* Slide Indicators */}
+        {/* Slide Indicators / Dots */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
           {slides.map((_, index) => (
             <button
@@ -310,10 +328,10 @@ const Home = () => {
                 e.stopPropagation();
                 setCurrentSlide(index);
               }}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+              className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
                 index === currentSlide
                   ? "w-6 bg-[#B9723D] shadow-sm"
-                  : "w-2 bg-secondary-300 hover:bg-secondary-400 dark:bg-secondary-700 dark:hover:bg-secondary-600"
+                  : "w-2.5 bg-secondary-300 hover:bg-secondary-400 dark:bg-secondary-700 dark:hover:bg-secondary-600"
               }`}
               aria-label={`Go to slide ${index + 1}`}
               aria-current={index === currentSlide ? "true" : "false"}

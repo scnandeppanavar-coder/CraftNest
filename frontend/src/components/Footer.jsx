@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Package } from 'lucide-react';
 import { FaFacebookF, FaInstagram, FaTwitter } from 'react-icons/fa';
+import Logo from './Logo';
 
 const Footer = () => {
   return (
@@ -11,14 +12,7 @@ const Footer = () => {
 
           {/* Brand Info */}
           <div className="space-y-4">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="bg-gradient-to-r from-primary-500 to-primary-600 dark:from-primary-400 dark:to-primary-500 p-2 rounded-xl text-white shadow-md">
-                <img src="https://ik.imagekit.io/stringstackseema/handmade%20jewelry/logo.png" alt="CraftNest Logo" className="w-5 h-5 object-contain" />
-              </span>
-              <span className="font-outfit font-extrabold text-xl tracking-tight text-secondary-900 dark:text-white">
-                Craft<span className="text-primary-500">Nest</span>
-              </span>
-            </Link>
+            <Logo showTagline={true} />
 
             <p className="text-sm text-secondary-500 dark:text-secondary-400 leading-relaxed">
               Discover unique, beautifully handcrafted products created by independent local artisans.

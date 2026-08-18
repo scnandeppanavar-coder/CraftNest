@@ -20,4 +20,7 @@ public class OrderDetailsDto {
     private String status;
     private LocalDateTime orderDate;
     private List<OrderItemDto> items;
+    private Integer userId;
+    private String customerName;
+    private String customerEmail;
 }

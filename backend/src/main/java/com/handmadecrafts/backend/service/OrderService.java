@@ -189,6 +189,9 @@ public class OrderService {
             .status(order.getStatus().name())
             .orderDate(order.getOrderDate())
             .items(items)
+            .userId(order.getUser() != null ? order.getUser().getUserId() : null)
+            .customerName(order.getUser() != null ? (order.getUser().getFullName() != null ? order.getUser().getFullName() : order.getUser().getUsername()) : null)
+            .customerEmail(order.getUser() != null ? order.getUser().getEmail() : null)
             .build();
 }
 }

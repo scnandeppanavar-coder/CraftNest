@@ -5,7 +5,7 @@ import { authService } from '../services/authService';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 
-const AdminRegister = () => {
+const AdminRegister = ({ onSuccess }) => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -87,6 +87,9 @@ const AdminRegister = () => {
       await authService.verifyAdminRegistrationOtp(email, otp);
       showToast('New Administrator account created successfully!', 'success');
       setStep('success');
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error(error);
       const errMsg = error.response?.data?.message || 'Invalid or expired OTP code.';
