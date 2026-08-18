@@ -218,7 +218,22 @@ public class EmailService {
                 );
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("OTP email successfully sent to Brevo API for {}", maskEmail(toEmail));
+                Map<String, Object> body = response.getBody();
+                String messageId = null;
+                if (body != null && body.containsKey("messageId")) {
+                    messageId = String.valueOf(body.get("messageId"));
+                }
+
+                if (messageId != null && !messageId.isBlank()) {
+                    log.info("Brevo API response: status={}, messageId={}, recipient={}",
+                            response.getStatusCode().value(),
+                            messageId,
+                            maskEmail(toEmail));
+                } else {
+                    log.warn("Brevo API response: status={}, messageId=MISSING, recipient={}",
+                            response.getStatusCode().value(),
+                            maskEmail(toEmail));
+                }
             } else {
                 log.error("Brevo API returned unexpected status code: {}", response.getStatusCode());
                 throw new IllegalStateException("Failed to send OTP email via Brevo API: Unexpected status");

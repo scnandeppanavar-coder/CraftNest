@@ -72,4 +72,25 @@ class EmailServiceTest {
         assertEquals(1, to.size());
         assertEquals("recipient@example.com", to.get(0).get("email"));
     }
+
+    @Test
+    void shouldSendBrevoPostRequestWithResponseId() {
+        // Arrange
+        ResponseEntity<Map> mockResponse = new ResponseEntity<>(Map.of("messageId", "1234-abcd"), HttpStatus.CREATED);
+        when(restTemplate.postForEntity(
+                eq("https://api.brevo.com/v3/smtp/email"),
+                any(HttpEntity.class),
+                eq(Map.class)
+        )).thenReturn(mockResponse);
+
+        // Act
+        emailService.sendOtpEmail("recipient@example.com", "123456", "Test Verification OTP");
+
+        // Assert
+        verify(restTemplate, times(1)).postForEntity(
+                eq("https://api.brevo.com/v3/smtp/email"),
+                any(HttpEntity.class),
+                eq(Map.class)
+        );
+    }
 }
