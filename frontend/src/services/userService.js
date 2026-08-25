@@ -10,4 +10,9 @@ export const userService = {
     const response = await apiClient.put(`/api/users/${userId}`, userData);
     return response.data;
   },
+
+  removeProfilePicture: async (userId) => {
+    const response = await apiClient.delete(`/api/users/${userId}/profile-picture`);
+    return response.data;
+  },
 };

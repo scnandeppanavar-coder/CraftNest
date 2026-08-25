@@ -396,11 +396,11 @@ const ChatbotWidget = () => {
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="group flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-[0_20px_45px_rgba(185,114,61,0.45)] transition hover:scale-105 hover:shadow-[0_25px_50px_rgba(185,114,61,0.55)]"
+        className="group flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-[0_4px_12px_rgba(185,114,61,0.35)] transition hover:scale-105 hover:shadow-[0_6px_16px_rgba(185,114,61,0.45)]"
         aria-label="Open customer support chat"
       >
-        <span className="absolute -top-2 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-[9px] font-bold text-white">AI</span>
-        <MessageCircleMore className="h-7 w-7" />
+        <span className="absolute -top-1.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-white bg-emerald-500 text-[7px] font-bold text-white">AI</span>
+        <MessageCircleMore className="h-5 w-5" />
       </button>
     </div>
   );

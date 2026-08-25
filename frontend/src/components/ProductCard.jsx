@@ -12,7 +12,7 @@ const ProductCard = ({ product }) => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const { productId, name, price, stock, category } = product;
+  const { productId, name, stock, category } = product;
 
   const imageUrl =
   product.imageUrl || "https://via.placeholder.com/400x400?text=No+Image";
@@ -146,10 +146,9 @@ const ProductCard = ({ product }) => {
         <div className="flex justify-between items-center mt-4">
 
           <div>
-            <p className="text-sm text-gray-500">Price</p>
-            <h2 className="font-bold text-xl">
-              ₹{price}
-            </h2>
+            <span className="font-bold text-xl">
+              ₹{product.price}
+            </span>
           </div>
 
           <div className="flex items-center gap-1">

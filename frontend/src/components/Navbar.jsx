@@ -25,16 +25,6 @@ const Navbar = () => {
   const searchRef = useRef(null);
   const profileRef = useRef(null);
 
-  const getWelcomeName = (username) => {
-    if (!username) return 'Valued Guest';
-    const lower = username.toLowerCase();
-    if (lower === 'user' || lower === 'null' || lower === 'undefined') return 'Valued Guest';
-    return username
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
   // Clear suggestions on route change
   useEffect(() => {
     setShowSuggestions(false);
@@ -232,12 +222,6 @@ const Navbar = () => {
               </>
             )}
 
-            {/* Welcome message */}
-            {isAuthenticated && (
-              <span className="hidden md:inline-block text-xs font-bold text-secondary-750 dark:text-secondary-200 mr-1 select-none animate-fade-in">
-                Welcome, {getWelcomeName(user?.fullName || user?.username)}!
-              </span>
-            )}
 
             {/* Profile Dropdown */}
             {isAuthenticated ? (
@@ -327,14 +311,7 @@ const Navbar = () => {
       {/* Mobile Menu Panel */}
       {isOpen && (
         <div className="md:hidden border-t border-secondary-100 dark:border-secondary-800 px-4 py-4 space-y-3 bg-white dark:bg-secondary-900 shadow-xl animate-fade-in-up">
-          {/* Mobile Welcome Message */}
-          {isAuthenticated && (
-            <div className="pb-2 border-b border-secondary-100 dark:border-secondary-800">
-              <p className="text-xs font-bold text-[#B9723D]">
-                Welcome, {getWelcomeName(user?.fullName || user?.username)}!
-              </p>
-            </div>
-          )}
+
           {/* Mobile Search */}
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <input

@@ -4,6 +4,8 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
 
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
   // Restore session if the page is refreshed
   const [token, setToken] = useState(() => sessionStorage.getItem("token"));
 
@@ -13,7 +15,7 @@ export const AuthProvider = ({ children }) => {
   });
 
   // Login
-  const login = (jwtToken, email, username, fullName, role, userId) => {
+  const login = (jwtToken, email, username, fullName, role, userId, profilePic) => {
 
     const userData = {
       email,
@@ -21,6 +23,7 @@ export const AuthProvider = ({ children }) => {
       fullName,
       role,
       userId,
+      profilePic,
     };
 
     sessionStorage.setItem("token", jwtToken);
@@ -28,6 +31,7 @@ export const AuthProvider = ({ children }) => {
 
     setToken(jwtToken);
     setUser(userData);
+    setJustLoggedIn(true);
   };
 
   // Update user
@@ -72,6 +76,8 @@ export const AuthProvider = ({ children }) => {
         updateUser,
         isAuthenticated,
         isAdmin,
+        justLoggedIn,
+        setJustLoggedIn,
       }}
     >
       {children}

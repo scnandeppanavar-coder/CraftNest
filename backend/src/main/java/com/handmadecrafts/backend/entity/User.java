@@ -38,4 +38,7 @@ private Role role;
 
     @Column(name = "updated_at", length = 45)
     private String updatedAt;
+
+    @Column(name = "profile_pic", columnDefinition = "LONGTEXT")
+    private String profilePic;
 }

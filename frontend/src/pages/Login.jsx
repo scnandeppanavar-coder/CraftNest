@@ -53,7 +53,8 @@ const Login = () => {
         data.username,
         data.fullName,
         data.role,
-        data.userId
+        data.userId,
+        data.profilePic
       );
 
       const welcomeName = getWelcomeName(data.fullName || data.username);

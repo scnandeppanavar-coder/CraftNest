@@ -3,6 +3,7 @@ package com.handmadecrafts.backend.controller;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +25,9 @@ import com.handmadecrafts.backend.service.ProductService;
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
+
+    @Value("${app.backend.url}")
+    private String backendUrl;
 
     private final ProductService productService;
 
@@ -113,11 +117,12 @@ public class ProductController {
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
         }
+        String cleanBackendUrl = backendUrl.endsWith("/") ? backendUrl : backendUrl + "/";
         for (MultipartFile file : files) {
             String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
             java.io.File dest = new java.io.File(uploadDir, filename);
             file.transferTo(dest);
-            urls.add("https://craftnest-b7jr.onrender.com/uploads/" + filename);
+            urls.add(cleanBackendUrl + "uploads/" + filename);
         }
         return ResponseEntity.ok(urls);
     }

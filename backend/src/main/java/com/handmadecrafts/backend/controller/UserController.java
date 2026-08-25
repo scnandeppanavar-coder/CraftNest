@@ -4,6 +4,7 @@ import com.handmadecrafts.backend.dto.UserDto;
 import com.handmadecrafts.backend.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,5 +37,10 @@ public class UserController {
             @PathVariable Integer userId,
             @RequestBody UserDto userDto) {
         return ResponseEntity.ok(userService.updateUserProfile(userId, userDto));
+    }
+
+    @DeleteMapping("/users/{userId}/profile-picture")
+    public ResponseEntity<UserDto> removeProfilePicture(@PathVariable Integer userId) {
+        return ResponseEntity.ok(userService.removeProfilePicture(userId));
     }
 }

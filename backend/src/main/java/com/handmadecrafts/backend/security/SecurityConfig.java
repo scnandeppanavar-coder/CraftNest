@@ -1,5 +1,6 @@
 package com.handmadecrafts.backend.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,6 +25,9 @@ import java.util.Collections;
 @EnableWebSecurity
 @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 public class SecurityConfig {
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -68,7 +72,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Collections.singletonList("*"));
+        if ("*".equals(frontendUrl)) {
+            configuration.setAllowedOriginPatterns(Collections.singletonList("*"));
+        } else {
+            configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                frontendUrl
+            ));
+        }
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration.setExposedHeaders(Collections.singletonList("Authorization"));

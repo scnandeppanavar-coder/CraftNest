@@ -48,7 +48,8 @@ const AdminLogin = () => {
         data.username,
         data.fullName,
         data.role,
-        data.userId
+        data.userId,
+        data.profilePic
       );
 
       showToast("Welcome Admin!", "success");

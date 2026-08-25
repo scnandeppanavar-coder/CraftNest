@@ -13,4 +13,5 @@ public class LoginResponse {
     private String role;
     private Integer userId;
     private String fullName;
+    private String profilePic;
 }

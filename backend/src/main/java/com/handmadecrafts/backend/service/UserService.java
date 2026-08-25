@@ -31,6 +31,7 @@ public class UserService {
                         .fullName(user.getFullName())
                         .role(user.getRole())
                         .createdAt(user.getCreatedAt())
+                        .profilePic(user.getProfilePic())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -62,6 +63,10 @@ public class UserService {
 
         user.setFullName(userDto.getFullName());
 
+        if (userDto.getProfilePic() != null) {
+            user.setProfilePic(userDto.getProfilePic());
+        }
+
         user = userRepository.save(user);
 
         return UserDto.builder()
@@ -71,6 +76,24 @@ public class UserService {
                 .fullName(user.getFullName())
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
+                .profilePic(user.getProfilePic())
+                .build();
+    }
+
+    @Transactional
+    public UserDto removeProfilePicture(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setProfilePic(null);
+        user = userRepository.save(user);
+        return UserDto.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(user.getRole())
+                .createdAt(user.getCreatedAt())
+                .profilePic(null)
                 .build();
     }
 }

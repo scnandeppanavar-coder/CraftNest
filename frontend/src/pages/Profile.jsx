@@ -239,11 +239,37 @@ const Profile = () => {
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      updateUser({ profilePic: reader.result });
-      showToast('Profile photo updated successfully', 'success');
+    reader.onloadend = async () => {
+      try {
+        await userService.updateProfile(user.userId, {
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          profilePic: reader.result
+        });
+        updateUser({ profilePic: reader.result });
+        showToast('Profile photo updated successfully', 'success');
+      } catch (error) {
+        console.error(error);
+        showToast(error.response?.data?.message || 'Failed to update profile photo', 'error');
+      }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!window.confirm('Are you sure you want to remove your profile picture?')) {
+      return;
+    }
+
+    try {
+      await userService.removeProfilePicture(user.userId);
+      updateUser({ profilePic: null });
+      showToast('Profile picture removed successfully.', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast(error.response?.data?.message || 'Failed to remove profile picture', 'error');
+    }
   };
 
   // ==========================================
@@ -616,16 +642,27 @@ const Profile = () => {
                             Provide a profile picture to customize your dashboard avatar
                           </p>
                         </div>
-                        <label htmlFor="avatar-upload-row" className="px-4 py-2 border border-[#D67A57] hover:bg-[#D67A57]/10 text-[#D67A57] font-bold text-xs rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shrink-0">
-                          Upload Photo
-                          <input
-                            id="avatar-upload-row"
-                            type="file"
-                            accept="image/png, image/jpeg, image/jpg"
-                            onChange={handlePhotoUpload}
-                            className="hidden"
-                          />
-                        </label>
+                        <div className="flex flex-wrap gap-2 justify-center sm:justify-start shrink-0">
+                          <label htmlFor="avatar-upload-row" className="px-4 py-2 border border-[#D67A57] hover:bg-[#D67A57]/10 text-[#D67A57] font-bold text-xs rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shrink-0">
+                            {user?.profilePic ? 'Change Profile Picture' : 'Add Profile Picture'}
+                            <input
+                              id="avatar-upload-row"
+                              type="file"
+                              accept="image/png, image/jpeg, image/jpg"
+                              onChange={handlePhotoUpload}
+                              className="hidden"
+                            />
+                          </label>
+                          {user?.profilePic && (
+                            <button
+                              type="button"
+                              onClick={handleRemovePhoto}
+                              className="px-4 py-2 border border-red-500 hover:bg-red-500/10 text-red-500 font-bold text-xs rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shrink-0"
+                            >
+                              Remove Profile Picture
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </form>

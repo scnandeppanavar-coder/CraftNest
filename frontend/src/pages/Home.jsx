@@ -18,14 +18,42 @@ import ProductCard from '../components/ProductCard';
 import { productService } from '../services/productService';
 import { categoryService } from '../services/categoryService';
 import { ProductSkeleton } from '../components/SkeletonLoader';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user, justLoggedIn, setJustLoggedIn } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [emailInput, setEmailInput] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
+
+  useEffect(() => {
+    if (justLoggedIn && user) {
+      setJustLoggedIn(false);
+      setShowWelcome(true);
+      setIsClosing(false);
+
+      // Start fade out at 1.7s
+      const fadeOutTimer = setTimeout(() => {
+        setIsClosing(true);
+      }, 1700);
+
+      // Hide popup completely at 2.0s
+      const closeTimer = setTimeout(() => {
+        setShowWelcome(false);
+        setIsClosing(false);
+      }, 2000);
+
+      return () => {
+        clearTimeout(fadeOutTimer);
+        clearTimeout(closeTimer);
+      };
+    }
+  }, [justLoggedIn, user, setJustLoggedIn]);
 
   // Carousel States
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -220,7 +248,41 @@ const Home = () => {
   const newArrivals = [...products].reverse().slice(0, 4);
 
   return (
-    <div className="space-y-20 pb-16 animate-fade-in-up">
+    <>
+      {showWelcome && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+            isClosing ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          <div
+            className={`w-[90%] max-w-md overflow-hidden rounded-3xl bg-white p-8 text-center shadow-2xl transition-all duration-300 dark:bg-secondary-900 ${
+              isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
+            }`}
+          >
+            {/* Elegant warm orange accent icon / header illustration */}
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary-50 text-[#B9723D] dark:bg-primary-950/30 dark:text-[#E89E6C] shadow-inner">
+              <HeartHandshake className="h-10 w-10 animate-bounce" />
+            </div>
+
+            <h2 className="font-outfit text-2xl font-black text-secondary-900 dark:text-white leading-tight">
+              Welcome back,<br />
+              <span className="text-[#B9723D] dark:text-[#E89E6C]">
+                {user?.fullName || user?.username}! 👋
+              </span>
+            </h2>
+
+            <p className="mt-4 text-sm text-secondary-500 dark:text-secondary-400 font-medium">
+              We're so happy to see you again.
+            </p>
+            <p className="mt-1 text-xs text-secondary-400 dark:text-secondary-500">
+              Explore unique handmade crafts made with love.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-20 pb-16 animate-fade-in-up">
       <section
         className="relative overflow-hidden rounded-[30px] border border-[#F1E8DD] bg-[#FAF7F2] shadow-[0_30px_80px_rgba(109,82,53,0.08)] transition-all duration-500 dark:border-secondary-800 dark:bg-secondary-950 w-full min-h-[640px] sm:min-h-[680px] lg:min-h-[520px] xl:min-h-[580px] flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B9723D] focus-visible:ring-offset-2"
         onMouseEnter={() => setIsPaused(true)}
@@ -467,6 +529,7 @@ const Home = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

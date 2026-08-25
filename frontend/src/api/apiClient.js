@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'https://craftnest-b7jr.onrender.com',
+  baseURL: import.meta.env.VITE_API_URL || 'https://craftnest-b7jr.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },

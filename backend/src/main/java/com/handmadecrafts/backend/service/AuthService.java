@@ -102,6 +102,7 @@ public class AuthService {
             .fullName(user.getFullName())
             .role(user.getRole().name())
             .userId(user.getUserId())
+            .profilePic(user.getProfilePic())
             .build();
 }
 
@@ -131,6 +132,7 @@ public LoginResponse adminLogin(LoginRequest request) {
             .fullName(user.getFullName())
             .role(user.getRole().name())
             .userId(user.getUserId())
+            .profilePic(user.getProfilePic())
             .build();
 }
     @Transactional
